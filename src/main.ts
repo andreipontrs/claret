@@ -6,7 +6,7 @@ import fs from "fs";
 import path from "path";
 import cors from "cors";
 
-import sequelize from "./config/database";
+import sequelize from './config/database';
 
 // Routes
 import authRoutes from "./routes/auth.routes";

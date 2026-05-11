@@ -74,16 +74,6 @@ const runORM = async () => {
     });
     BloodDonationAppointment.belongsTo(BloodBank, { foreignKey: "bloodBankId" });
 
-    // ✅ BloodBank ↔ BloodBankSchedule
-    BloodBank.hasMany(BloodBankSchedule, {
-      foreignKey: "bloodBankId",
-      as: "walkInSchedule",
-      onDelete: "CASCADE",
-    });
-    BloodBankSchedule.belongsTo(BloodBank, {
-      foreignKey: "bloodBankId",
-      as: "bloodBank",
-    });
 
     // Facility ↔ Inventory
     Facility.hasMany(Inventory, {

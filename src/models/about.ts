@@ -42,7 +42,7 @@ AboutContact.init(
     },
 
     contact: {
-      type: DataTypes.TEXT, // flexible text (email, phone, address, etc.)
+      type: DataTypes.TEXT, 
       allowNull: false,
     },
   },
