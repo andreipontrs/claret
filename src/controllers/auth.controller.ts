@@ -4,7 +4,7 @@ import jwt, { SignOptions } from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import User from "../models/user";
 import Role from "../models/role";
-import { sendVerificationEmail, sendResetPasswordEmail } from "../utils/email.service"; // ✅ fixed import
+import { sendVerificationEmail, sendResetPasswordEmail } from "../utils/email.service";
 
 // ─── Token Generator ───────────────────────────────────────
 const generateToken = (user: { id: string; email: string; role: string }) => {
@@ -50,6 +50,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const existingEmail = await User.findOne({ where: { email } });
     if (existingEmail) {
       res.status(409).json({ message: "Email is already registered." });
+      return;
+    }
+
+    const existingPhone = await User.findOne({ where: { phoneNumber } });
+    if (existingPhone) {
+      res.status(409).json({ message: "Phone number is already registered." });
       return;
     }
 
