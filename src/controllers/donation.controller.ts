@@ -10,12 +10,20 @@ import { sendAppointmentConfirmationEmail } from "../utils/email.service";
 import { sendSMS } from "../services/smsService";
 import { smsTemplates } from "../template/smsTemplates";
 
-const currentUserId = (req: Request): string => (req.user as any).id;
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
+const currentUserId = (req: AuthRequest): string => req.user!.id;
 
 // ── CREATE ────────────────────────────────────────────────────────────────────
 
 export async function createDonationAppointment(
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<Response> {
   try {
@@ -171,7 +179,7 @@ export async function createDonationAppointment(
 // ── GET ALL ───────────────────────────────────────────────────────────────────
 
 export async function getAllDonationAppointments(
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<Response> {
   try {
@@ -225,7 +233,7 @@ export async function getAllDonationAppointments(
 // ── GET ONE ───────────────────────────────────────────────────────────────────
 
 export async function getDonationAppointmentById(
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<Response> {
   try {
@@ -246,7 +254,7 @@ export async function getDonationAppointmentById(
 // ── UPDATE (RESCHEDULE) ───────────────────────────────────────────────────────
 
 export async function updateDonationAppointment(
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<Response> {
   try {
@@ -368,7 +376,7 @@ export async function updateDonationAppointment(
 // ── REVIEW ────────────────────────────────────────────────────────────────────
 
 export async function reviewDonationAppointment(
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<Response> {
   try {
@@ -444,7 +452,7 @@ export async function reviewDonationAppointment(
 // ── CANCEL ────────────────────────────────────────────────────────────────────
 
 export async function cancelDonationAppointment(
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<Response> {
   try {

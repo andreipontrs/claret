@@ -2,6 +2,14 @@ import { Request, Response } from "express";
 import Profile from "../models/profile";
 import User from "../models/user";
 
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
 function classifyUser(profile: Profile): "donor" | "recipient" | "both" | "unclassified" {
   if (profile.willingToDonate && profile.needBlood) return "both";
   if (profile.willingToDonate) return "donor";
@@ -43,7 +51,7 @@ const ALLOWED_PROFILE_FIELDS = [
 ];
 
 // GET Profile
-export const getProfile = async (req: Request, res: Response) => {
+export const getProfile = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -83,7 +91,7 @@ export const getProfile = async (req: Request, res: Response) => {
 };
 
 // PUT Profile
-export const updateProfile = async (req: Request, res: Response) => {
+export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });

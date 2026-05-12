@@ -10,8 +10,15 @@ import { sendClearerImageRequestEmail } from "../utils/email.service";
 import { sendSMS } from "../services/smsService";
 import { smsTemplates } from "../template/smsTemplates";
 
-const currentUserId = (req: Request): string => (req.user as any).id;
+const currentUserId = (req: AuthRequest): string => req.user!.id;
 
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
 // ── CREATE ────────────────────────────────────────────────────────────────────
 
 export async function createTransfusionRequest(
@@ -224,7 +231,7 @@ export async function updateTransfusionRequest(
 // ── REVIEW ────────────────────────────────────────────────────────────────────
 
 export async function reviewTransfusionRequest(
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<Response> {
   try {
@@ -343,7 +350,7 @@ export async function cancelTransfusionRequest(
 // No longer changes status. Sets needsReupload = true and emails the patient.
 
 export async function requestClearerImage(
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<Response> {
   try {
@@ -398,7 +405,7 @@ export async function requestClearerImage(
 // Replaces attachments and clears the needsReupload flag. Status stays PENDING.
 
 export async function reuploadReferral(
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<Response> {
   try {

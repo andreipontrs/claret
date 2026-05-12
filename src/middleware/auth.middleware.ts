@@ -1,9 +1,17 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
 // ─── Authenticate User ─────────────────────────────────────
 export const authenticateUser = (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -16,15 +24,12 @@ export const authenticateUser = (
 
     const token = authHeader.split(" ")[1];
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET!
-    ) as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
 
     req.user = {
       id: decoded.id,
       email: decoded.email,
-      role: decoded.role || "user", // fallback prevents crash
+      role: decoded.role || "user",
     };
 
     next();
@@ -37,7 +42,7 @@ export const authenticateUser = (
 
 // ─── Authorize Role ────────────────────────────────────────
 export const authorizeRole = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
     const user = req.user;
 
     if (!user) {
@@ -47,7 +52,6 @@ export const authorizeRole = (...roles: string[]) => {
     const userRole = (user.role || "user").toLowerCase();
     const allowedRoles = roles.map((r) => r.toLowerCase());
 
-    // superadmin bypass
     if (userRole === "superadmin") {
       return next();
     }
