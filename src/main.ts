@@ -47,7 +47,12 @@ uploadDirs.forEach((dir) => {
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://claret.sbs",
+      "https://www.claret.sbs",
+    ],
     credentials: true,
   })
 );
@@ -58,7 +63,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(
   "/uploads",
   (req: any, res: any, next: any) => {
-    res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     next();
   },
