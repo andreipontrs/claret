@@ -155,11 +155,10 @@ export const updateBloodBank = async (
     const {
       hospitalName,
       address,
-      contactNumber,
-      telephoneNumber,
-      facilityNumber,
-      latitude,
-      longitude,
+      contactNo,
+      facilityNo,
+      lat,
+      lon,
       email,
     } = req.body;
 
@@ -174,11 +173,10 @@ export const updateBloodBank = async (
     await bloodBank.update({
       hospitalName,
       address,
-      contactNo: contactNumber,
-      telephoneNo: telephoneNumber,
-      facilityNo: facilityNumber,
-      lat: latitude,
-      lon: longitude,
+      contactNo,
+      facilityNo,
+      lat,
+      lon,
       email,
     });
 
