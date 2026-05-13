@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/user";
 import Role from "../models/role";
+import BloodBank from "../models/bloodbank";
 
 export async function adminLogin(req: Request, res: Response) {
   const { email, password } = req.body;
@@ -70,3 +71,34 @@ export async function adminLogin(req: Request, res: Response) {
     return res.status(500).json({ message: "Server error.", error });
   }
 }
+
+export const getAdminAndBloodBanks = async (req: Request, res: Response) => {
+  try {
+    const users = await User.findAll({
+      include: [
+        {
+          model: Role,
+          as: "role",
+          attributes: ["id", "name"],
+        },
+      ],
+    });
+
+    const admins = users.filter(
+      (u) => u.role?.name === "admin"
+    );
+
+    const bloodBanks = await BloodBank.findAll({
+      attributes: ["id", "hospitalName", "address", "email", "status", "createdAt"],
+    });
+
+    res.json({
+      success: true,
+      admins,
+      bloodBanks,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

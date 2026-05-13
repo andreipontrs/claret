@@ -1,6 +1,7 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
-import { adminLogin } from "../controllers/admin.controller";
+import { adminLogin, getAdminAndBloodBanks } from "../controllers/admin.controller";
+import { authenticateUser, authorizeRole } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -25,6 +26,8 @@ router.post("/login", async (req, res) => {
 
   return res.status(200).json({ token, role: match.role });
 });
+
+router.get("/admin-dashboard", authenticateUser, authorizeRole("admin"), getAdminAndBloodBanks);
 
 
 export default router;

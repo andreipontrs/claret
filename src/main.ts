@@ -9,6 +9,8 @@ import path from "path";
 import sequelize from "./config/database";
 import { Routes } from "./routes/routes";
 
+import "./models/index"
+
 // Jobs
 import { startAutoExpireJob } from "./jobs/autoExpireBloodRequests";
 import { startDonationReminderCron } from "./controllers/donationReminder.cron";
