@@ -13,7 +13,11 @@ export const transporter = nodemailer.createTransport({
 // ==============================
 // SEND ACTIVATION EMAIL
 // ==============================
-export const sendActivationEmail = async (email: string, activationLink: string) => {
+export const sendActivationEmail = async (
+  email: string,
+  activationLink: string,
+  plainPassword: string
+) => {
   try {
     await transporter.sendMail({
       from: `"Claret Blood Bank System" <${process.env.EMAIL_USER}>`,
@@ -28,8 +32,15 @@ export const sendActivationEmail = async (email: string, activationLink: string)
             You have been invited to join the <strong>Claret Blood Bank System</strong>.
           </p>
 
+          <p><strong>Login Credentials:</strong></p>
+
+          <div style="background:#f4f4f4; padding:10px; border-radius:6px;">
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Password:</strong> ${plainPassword}</p>
+          </div>
+
           <p>
-            Please click the button below to activate your account:
+            Please activate your account using the button below:
           </p>
 
           <div style="margin: 20px 0;">
@@ -52,7 +63,7 @@ export const sendActivationEmail = async (email: string, activationLink: string)
           </p>
 
           <p style="font-size: 13px; color: #777;">
-            If you did not request this, please ignore this email.
+            Please change your password after first login.
           </p>
 
           <hr style="margin: 20px 0;" />
@@ -65,7 +76,6 @@ export const sendActivationEmail = async (email: string, activationLink: string)
     });
 
     console.log("✅ Activation email sent to:", email);
-
   } catch (error) {
     console.error("❌ Email sending failed:", error);
     throw new Error("Failed to send email");

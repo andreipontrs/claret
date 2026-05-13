@@ -5,8 +5,20 @@ import jwt from "jsonwebtoken";
 import BloodBank from "../models/bloodbank";
 import BloodBankSchedule, { ALL_DAYS, DayOfWeek } from "../models/Bloodbank_schedule";
 import Role from "../models/role";
+import User from "../models/user";
 import Facility from "../models/facility";
 import { sendActivationEmail } from "../utils/email.bloodbank";
+import sequelize from "../config/database";
+
+function generatePassword(length = 10) {
+  const chars =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$";
+  let pass = "";
+  for (let i = 0; i < length; i++) {
+    pass += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return pass;
+}
 
 // ==============================
 // CREATE / INVITE BLOOD BANK
@@ -23,60 +35,108 @@ export async function createBloodBankAccount(req: Request, res: Response) {
     lon,
   } = req.body;
 
-  try {
-    const normalizedHospitalName = hospitalName?.trim();
-    const normalizedAddress      = address?.trim();
-    const normalizedContactNo    = contactNo?.trim();
-    const normalizedTelephoneNo  = telephoneNo?.trim() || null;
-    const normalizedEmail        = email?.toLowerCase().trim();
+  const plainPassword = generatePassword(12);
+  const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-    if (
-      !normalizedEmail ||
-      !normalizedHospitalName ||
-      !normalizedAddress ||
-      !normalizedContactNo
-    ) {
+  const transaction = await sequelize.transaction();
+
+  try {
+    const normalizedEmail = email?.toLowerCase().trim();
+    const normalizedHospitalName = hospitalName?.trim();
+    const normalizedAddress = address?.trim();
+    const normalizedContactNo = contactNo?.trim();
+    const normalizedTelephoneNo = telephoneNo?.trim() || null;
+
+    if (!normalizedEmail || !normalizedHospitalName || !normalizedAddress || !normalizedContactNo) {
       return res.status(400).json({
-        message:
-          "Email, hospital name, address, and contact number are required.",
+        message: "Email, hospital name, address, and contact number are required.",
       });
     }
 
-    const existing = await BloodBank.findOne({
+    // =========================
+    // GLOBAL DUPLICATE CHECK
+    // =========================
+    const existingUser = await User.findOne({
       where: { email: normalizedEmail },
     });
-    if (existing) {
-      return res.status(409).json({ message: "Email already in use." });
+
+    const existingBloodBank = await BloodBank.findOne({
+      where: { email: normalizedEmail },
+    });
+
+    if (existingUser || existingBloodBank) {
+      return res.status(409).json({
+        message: "Email already in use.",
+      });
     }
 
-    const role = await Role.findOne({ where: { name: "blood_bank" } });
+    // ALSO CHECK PHONE
+    const existingPhoneUser = await User.findOne({
+      where: { phoneNumber: normalizedContactNo },
+    });
+
+    const existingPhoneBank = await BloodBank.findOne({
+      where: { contactNo: normalizedContactNo },
+    });
+
+    if (existingPhoneUser || existingPhoneBank) {
+      return res.status(409).json({
+        message: "Contact number already in use.",
+      });
+    }
+
+    const role = await Role.findOne({
+      where: { name: "blood_bank" },
+    });
+
     if (!role) {
       return res.status(500).json({ message: "blood_bank role not found." });
     }
 
-    const token  = crypto.randomBytes(32).toString("hex");
+    const token = crypto.randomBytes(32).toString("hex");
     const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    // Create the blood bank record
-    const bank = await BloodBank.create({
-      hospitalName:          normalizedHospitalName,
-      address:               normalizedAddress,
-      contactNo:             normalizedContactNo,
-      telephoneNo:           normalizedTelephoneNo,
-      email:                 normalizedEmail,
-      password:              null,
-      roleId:                role.id,
-      status:                "inactive",
-      activationToken:       token,
-      activationTokenExpiry: expiry,
+    // =========================
+    // 1. CREATE USER FIRST
+    // =========================
+    const user = await User.create(
+      {
+        firstName: normalizedHospitalName, // hospital becomes user name
+        lastName: "Blood Bank",
+        email: normalizedEmail,
+        phoneNumber: normalizedContactNo,
+        password: hashedPassword,
+        roleId: role.id,
+        isEmailVerified: false,
+      },
+      { transaction }
+    );
 
-      lat,
-      lon,
-    });
+    // =========================
+    // 2. CREATE BLOOD BANK
+    // =========================
+    const bank = await BloodBank.create(
+      {
+        hospitalName: normalizedHospitalName,
+        address: normalizedAddress,
+        contactNo: normalizedContactNo,
+        telephoneNo: normalizedTelephoneNo,
+        email: normalizedEmail,
+        password: hashedPassword,
+        roleId: role.id,
+        status: "inactive",
+        activationToken: token,
+        activationTokenExpiry: expiry,
+        lat,
+        lon,
+        userId: user.id, 
+      },
+      { transaction }
+    );
 
-    // Build all 7 schedule rows
-    // If the admin submitted a walkInSchedule array, use it.
-    // Otherwise default every day to closed.
+    // =========================
+    // 3. CREATE SCHEDULE
+    // =========================
     const scheduleRows = ALL_DAYS.map((day: DayOfWeek) => {
       const submitted = Array.isArray(walkInSchedule)
         ? walkInSchedule.find((s: any) => s.day === day)
@@ -85,19 +145,27 @@ export async function createBloodBankAccount(req: Request, res: Response) {
       return {
         bloodBankId: bank.id,
         day,
-        open:      submitted?.open      ?? false,
+        open: submitted?.open ?? false,
         startTime: submitted?.startTime ?? "08:00",
-        endTime:   submitted?.endTime   ?? "17:00",
+        endTime: submitted?.endTime ?? "17:00",
       };
     });
 
-    await BloodBankSchedule.bulkCreate(scheduleRows);
+    await BloodBankSchedule.bulkCreate(scheduleRows, { transaction });
 
+    await transaction.commit();
+
+    // =========================
+    // EMAIL
+    // =========================
     const activationLink = `${process.env.FRONTEND_URL}/activate-account?token=${token}`;
-    await sendActivationEmail(normalizedEmail, activationLink);
+    await sendActivationEmail(normalizedEmail, activationLink, plainPassword);
 
-    return res.status(201).json({ message: "Invitation sent successfully." });
+    return res.status(201).json({
+      message: "Blood bank + user account created successfully.",
+    });
   } catch (error) {
+    await transaction.rollback();
     console.error("CREATE ERROR:", error);
     return res.status(500).json({ message: "Server error." });
   }

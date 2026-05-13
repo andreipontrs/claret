@@ -18,12 +18,20 @@ interface BloodBankAttributes {
   lat: number | null;
   lon: number | null;
   facilityNo: string | null;
+  userId?: string | null;
 }
 
 interface BloodBankCreation
-  extends Optional
-  <  BloodBankAttributes,
-    "id" | "lat" | "lon" | "facilityNo"
+  extends Optional<
+    BloodBankAttributes,
+    | "id"
+    | "telephoneNo"
+    | "password"
+    | "activationToken"
+    | "activationTokenExpiry"
+    | "lat"
+    | "lon"
+    | "userId" 
   > {}
 
 class BloodBank
@@ -44,6 +52,7 @@ class BloodBank
   public lat!: number | null;
   public lon!: number | null;
   public facilityNo!: string | null;
+  public userId?: string | null;
 }
 
 BloodBank.init(
@@ -106,6 +115,14 @@ BloodBank.init(
       type: DataTypes.STRING(50),
       allowNull: true,
       field: "facility_no",
+    },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "users",
+        key: "id",
+      },
     },
   },
   {
