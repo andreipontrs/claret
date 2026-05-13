@@ -89,7 +89,7 @@ export const getAdminAndBloodBanks = async (req: Request, res: Response) => {
     );
 
     const bloodBanks = await BloodBank.findAll({
-      attributes: ["id", "hospitalName", "address", "email", "status", "createdAt"],
+      attributes: ["id", "hospitalName", "address", "email", "status", "lon", "lat", "facility_no", "createdAt"],
     });
 
     res.json({
