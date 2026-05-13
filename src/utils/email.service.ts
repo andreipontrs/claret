@@ -347,3 +347,105 @@ export async function sendClearerImageRequestEmail({
 </html>`,
   });
 }
+
+export const sendAdminCredentialsEmail = async (
+  email: string,
+  firstName: string,
+  password: string
+): Promise<void> => {
+  const loginLink = `${process.env.FRONTEND_URL}/login`;
+  const year = new Date().getFullYear();
+
+  await transporter.sendMail({
+    from: `"Claret Admin System" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "Your Admin Account Credentials - Claret",
+
+    html: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e5e5;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#d55757;padding:32px;text-align:center;">
+              <span style="font-size:24px;font-weight:700;color:#ffffff;letter-spacing:1px;">
+                CLARET ADMIN
+              </span>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 48px 32px;">
+
+              <h1 style="margin:0 0 12px;font-size:22px;color:#1a1a1a;font-weight:600;">
+                Welcome, ${firstName}
+              </h1>
+
+              <p style="margin:0 0 20px;font-size:15px;color:#555;line-height:1.6;">
+                Your <strong>admin account</strong> has been successfully created.
+                Below are your login credentials:
+              </p>
+
+              <!-- Credentials Box -->
+              <div style="background:#fef5f5;border-left:4px solid #d55757;padding:16px 20px;border-radius:6px;margin-bottom:20px;">
+                <p style="margin:0;font-size:14px;color:#333;">
+                  <strong>Email:</strong> ${email}
+                </p>
+                <p style="margin:8px 0 0;font-size:14px;color:#333;">
+                  <strong>Password:</strong> ${password}
+                </p>
+              </div>
+
+              <!-- Login Button -->
+              <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr>
+                  <td style="background:#d55757;border-radius:8px;">
+                    <a href="${loginLink}"
+                      style="display:inline-block;padding:14px 32px;font-size:15px;
+                             font-weight:600;color:#ffffff;text-decoration:none;">
+                      Login to Dashboard
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Warning -->
+              <div style="background:#fff3cd;border:1px solid #ffeeba;border-radius:8px;padding:12px 16px;">
+                <p style="margin:0;font-size:13px;color:#856404;line-height:1.6;">
+                  ⚠️ For security reasons, please change your password immediately after logging in.
+                </p>
+              </div>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#fafafa;border-top:1px solid #eeeeee;padding:20px 48px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#aaaaaa;">
+                © ${year} Claret Admin System. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `,
+  });
+};

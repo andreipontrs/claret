@@ -4,7 +4,19 @@ import jwt, { SignOptions } from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import User from "../models/user";
 import Role from "../models/role";
-import { sendVerificationEmail, sendResetPasswordEmail } from "../utils/email.service";
+import { sendVerificationEmail, sendResetPasswordEmail, sendAdminCredentialsEmail } from "../utils/email.service";
+
+const generateRandomPassword = (length = 12): string => {
+  const chars =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&";
+  let password = "";
+
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  return password;
+};
 
 // ─── Token Generator ───────────────────────────────────────
 const generateToken = (user: { id: string; email: string; role: string }) => {
@@ -103,6 +115,78 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error("Registration error:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+// ─── Admin Register ─────────────────────────────────────
+export const registerAdmin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const {
+      firstName,
+      middleName,
+      lastName,
+      suffix,
+      email,
+      phoneNumber,
+      adminKey,
+    } = req.body;
+
+    // 🔐 security check
+    if (adminKey !== process.env.ADMIN_SECRET_KEY) {
+      res.status(403).json({ message: "Unauthorized admin creation attempt." });
+      return;
+    }
+
+    const existingEmail = await User.findOne({ where: { email } });
+    if (existingEmail) {
+      res.status(409).json({ message: "Email is already registered." });
+      return;
+    }
+
+    const existingPhone = await User.findOne({ where: { phoneNumber } });
+    if (existingPhone) {
+      res.status(409).json({ message: "Phone number is already registered." });
+      return;
+    }
+
+    const adminRole = await Role.findOne({ where: { name: "admin" } });
+    if (!adminRole) {
+      res.status(500).json({ message: "Admin role not found." });
+      return;
+    }
+
+    // 🔥 AUTO GENERATE PASSWORD
+    const plainPassword = generateRandomPassword(12);
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+    const newAdmin = await User.create({
+      firstName,
+      middleName: middleName || null,
+      lastName,
+      suffix: suffix || null,
+      email,
+      phoneNumber,
+      password: hashedPassword,
+      roleId: adminRole.id,
+      isEmailVerified: true,
+    });
+
+    // 🔥 SEND EMAIL WITH CREDENTIALS
+    await sendAdminCredentialsEmail(email, firstName, plainPassword);
+
+    res.status(201).json({
+      message: "Admin account created and credentials sent to email.",
+      user: {
+        id: newAdmin.id,
+        firstName: newAdmin.firstName,
+        lastName: newAdmin.lastName,
+        email: newAdmin.email,
+        role: "admin",
+      },
+    });
+  } catch (error) {
+    console.error("Admin registration error:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 };

@@ -1,5 +1,13 @@
 import { body } from "express-validator";
 
+export const validateAdminRegister = [
+  body("firstName").notEmpty().withMessage("First name is required."),
+  body("lastName").notEmpty().withMessage("Last name is required."),
+  body("email").isEmail().withMessage("Valid email is required."),
+  body("phoneNumber").notEmpty().withMessage("Phone number is required."),
+  body("adminKey").notEmpty().withMessage("Admin key is required."),
+];
+
 export const signupValidation = [
   body("firstName")
     .notEmpty()
