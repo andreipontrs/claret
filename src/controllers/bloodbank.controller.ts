@@ -19,6 +19,8 @@ export async function createBloodBankAccount(req: Request, res: Response) {
     telephoneNo,
     email,
     walkInSchedule,
+    lat,
+    lon,
   } = req.body;
 
   try {
@@ -67,6 +69,9 @@ export async function createBloodBankAccount(req: Request, res: Response) {
       status:                "inactive",
       activationToken:       token,
       activationTokenExpiry: expiry,
+
+      lat,
+      lon,
     });
 
     // Build all 7 schedule rows
@@ -273,65 +278,6 @@ export async function activateAccount(req: Request, res: Response) {
       .json({ message: "Account activated successfully." });
   } catch (error) {
     console.error("ACTIVATE ERROR:", error);
-    return res.status(500).json({ message: "Server error." });
-  }
-}
-
-// ==============================
-// LOGIN
-// ==============================
-export async function login(req: Request, res: Response) {
-  const { email, password } = req.body;
-
-  try {
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and password are required." });
-    }
-
-    const normalizedEmail = email.toLowerCase().trim();
-    const user = await BloodBank.findOne({
-      where:   { email: normalizedEmail },
-      include: [{ model: Role, as: "role" }],
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
-    }
-
-    if (user.status !== "active") {
-      return res.status(403).json({
-        message: "Account is not activated. Please check your email.",
-      });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password as string);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid password." });
-    }
-
-    const roleName = (user as any).role?.name || "blood_bank";
-
-    const token = jwt.sign(
-      { id: user.id, role: roleName, facilityNo: user.facilityNo ?? null },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "7d" }
-    );
-
-    return res.status(200).json({
-      message: "Login successful.",
-      token,
-      user: {
-        id:           user.id,
-        hospitalName: user.hospitalName,
-        email:        user.email,
-        role:         roleName,
-        facilityNo:   user.facilityNo ?? null,
-      },
-    });
-  } catch (error) {
-    console.error("LOGIN ERROR:", error);
     return res.status(500).json({ message: "Server error." });
   }
 }

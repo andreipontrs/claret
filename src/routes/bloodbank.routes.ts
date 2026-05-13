@@ -2,7 +2,6 @@ import { Router } from "express";
 import {
   createBloodBankAccount,
   activateAccount,
-  login,
   getAllBloodBanks,
   deleteBloodBank,
   getActiveBloodBanks,
@@ -16,7 +15,6 @@ import { handleValidation } from "../middleware/handleValidation";
 import {
   validateCreateBloodBank,
   validateActivateAccount,
-  validateLogin,
   validateUpdateSchedule,
 } from "../validation/bloodbank.validation";
 
@@ -32,8 +30,6 @@ router.post(
   handleValidation,
   activateAccount
 );
-
-router.post("/login", validateLogin, handleValidation, login);
 
 // ── BLOOD BANK (own profile) ──────────────────────────────────────────────────
 
