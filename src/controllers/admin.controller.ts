@@ -102,3 +102,94 @@ export const getAdminAndBloodBanks = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const updateAdmin = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      firstName,
+      middleName,
+      lastName,
+      suffix,
+      email,
+    } = req.body;
+
+    const admin = await User.findByPk(id);
+
+    if (!admin) {
+      return res.status(404).json({
+        message: "Admin not found",
+      });
+    }
+
+    await admin.update({
+      firstName,
+      middleName,
+      lastName,
+      suffix,
+      email,
+    });
+
+    return res.json({
+      success: true,
+      message: "Admin updated successfully",
+      admin,
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
+
+export const updateBloodBank = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      hospitalName,
+      address,
+      contactNumber,
+      facilityNumber,
+      latitude,
+      longitude,
+      email,
+    } = req.body;
+
+    const bloodBank = await BloodBank.findByPk(id);
+
+    if (!bloodBank) {
+      return res.status(404).json({
+        message: "Blood bank not found",
+      });
+    }
+
+    await bloodBank.update({
+      hospitalName,
+      address,
+      contactNumber,
+      facilityNumber,
+      latitude,
+      longitude,
+      email,
+    });
+
+    return res.json({
+      success: true,
+      message: "Blood bank updated successfully",
+      bloodBank,
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+};

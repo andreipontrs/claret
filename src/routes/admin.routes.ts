@@ -1,6 +1,6 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
-import { adminLogin, getAdminAndBloodBanks } from "../controllers/admin.controller";
+import { adminLogin, getAdminAndBloodBanks, updateAdmin, updateBloodBank } from "../controllers/admin.controller";
 import { authenticateUser, authorizeRole } from "../middleware/auth.middleware";
 
 const router = Router();
@@ -29,5 +29,19 @@ router.post("/login", async (req, res) => {
 
 router.get("/admin-dashboard", authenticateUser, authorizeRole("admin"), getAdminAndBloodBanks);
 
+
+router.put(
+  "/update-admin/:id",
+  authenticateUser,
+  authorizeRole("admin"),
+  updateAdmin
+);
+
+router.put(
+  "/update-bloodbank/:id",
+  authenticateUser,
+  authorizeRole("admin"),
+  updateBloodBank
+);
 
 export default router;
