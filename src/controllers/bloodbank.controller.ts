@@ -107,7 +107,7 @@ export async function createBloodBankAccount(req: Request, res: Response) {
         phoneNumber: normalizedContactNo,
         password: hashedPassword,
         roleId: role.id,
-        isEmailVerified: false,
+        isEmailVerified: true,
       },
       { transaction }
     );
@@ -124,7 +124,7 @@ export async function createBloodBankAccount(req: Request, res: Response) {
         email: normalizedEmail,
         password: hashedPassword,
         roleId: role.id,
-        status: "inactive",
+        status: "active",
         activationToken: token,
         activationTokenExpiry: expiry,
         lat,

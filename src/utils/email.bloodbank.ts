@@ -38,30 +38,7 @@ export const sendActivationEmail = async (
             <p><strong>Email:</strong> ${email}</p>
             <p><strong>Password:</strong> ${plainPassword}</p>
           </div>
-
-          <p>
-            Please activate your account using the button below:
-          </p>
-
-          <div style="margin: 20px 0;">
-            <a href="${activationLink}" 
-               style="
-                 background-color: #d55757;
-                 color: #ffffff;
-                 padding: 12px 20px;
-                 text-decoration: none;
-                 border-radius: 6px;
-                 display: inline-block;
-                 font-weight: bold;
-               ">
-              Activate Account
-            </a>
-          </div>
-
-          <p style="font-size: 13px; color: #777;">
-            This link will expire in 24 hours.
-          </p>
-
+          
           <p style="font-size: 13px; color: #777;">
             Please change your password after first login.
           </p>
