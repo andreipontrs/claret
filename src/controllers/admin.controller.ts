@@ -103,8 +103,12 @@ export const getAdminAndBloodBanks = async (req: Request, res: Response) => {
   }
 };
 
-export const updateAdmin = async (req: Request, res: Response) => {
+export const updateAdmin = async (
+  req: Request,
+  res: Response
+) => {
   try {
+
     const id = req.params.id as string;
 
     const {
@@ -114,6 +118,19 @@ export const updateAdmin = async (req: Request, res: Response) => {
       suffix,
       email,
     } = req.body;
+
+    const existingEmail = await User.findOne({
+      where: { email },
+    });
+
+    if (
+      existingEmail &&
+      existingEmail.id !== id
+    ) {
+      return res.status(400).json({
+        message: "Email already exists",
+      });
+    }
 
     const admin = await User.findByPk(id);
 
@@ -136,12 +153,15 @@ export const updateAdmin = async (req: Request, res: Response) => {
       message: "Admin updated successfully",
       admin,
     });
+
   } catch (err) {
+
     console.error(err);
 
     return res.status(500).json({
       message: "Server error",
     });
+
   }
 };
 
@@ -150,6 +170,7 @@ export const updateBloodBank = async (
   res: Response
 ) => {
   try {
+
     const id = req.params.id as string;
 
     const {
@@ -161,6 +182,19 @@ export const updateBloodBank = async (
       lon,
       email,
     } = req.body;
+
+    const existingEmail = await BloodBank.findOne({
+      where: { email },
+    });
+
+    if (
+      existingEmail &&
+      existingEmail.id !== id
+    ) {
+      return res.status(400).json({
+        message: "Email already exists",
+      });
+    }
 
     const bloodBank = await BloodBank.findByPk(id);
 
@@ -185,11 +219,14 @@ export const updateBloodBank = async (
       message: "Blood bank updated successfully",
       bloodBank,
     });
+
   } catch (err) {
+
     console.error(err);
 
     return res.status(500).json({
       message: "Server error",
     });
+
   }
 };
