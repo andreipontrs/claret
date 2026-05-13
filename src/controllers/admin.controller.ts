@@ -105,7 +105,7 @@ export const getAdminAndBloodBanks = async (req: Request, res: Response) => {
 
 export const updateAdmin = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const {
       firstName,
@@ -150,12 +150,13 @@ export const updateBloodBank = async (
   res: Response
 ) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const {
       hospitalName,
       address,
       contactNumber,
+      telephoneNumber,
       facilityNumber,
       latitude,
       longitude,
@@ -173,10 +174,11 @@ export const updateBloodBank = async (
     await bloodBank.update({
       hospitalName,
       address,
-      contactNumber,
-      facilityNumber,
-      latitude,
-      longitude,
+      contactNo: contactNumber,
+      telephoneNo: telephoneNumber,
+      facilityNo: facilityNumber,
+      lat: latitude,
+      lon: longitude,
       email,
     });
 
