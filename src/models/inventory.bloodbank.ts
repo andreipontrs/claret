@@ -14,41 +14,47 @@ export type ComponentType =
   | "Leukocyte-Poor FFP"
   | "Cryoprecipitate";
 
+export type SourceType = "walk-in" | "appointment" | "admin";
+
 interface InventoryAttributes {
   id: string;
   facilityNo: string;
   year: number;
   serialNo: string;
+  bloodId: string;           // ← NEW: e.g. fac-001-00010180713261
   dateOfProduce: Date;
   expiration: Date;
   bloodType: BloodType;
   component: ComponentType;
+  source: SourceType;        // ← NEW: walk-in | appointment | admin
   units: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 interface InventoryCreation
-  extends Optional
-  <  InventoryAttributes,
+  extends Optional<
+    InventoryAttributes,
     "id" | "createdAt" | "updatedAt"
   > {}
 
-class BloodbankInventory extends Model<InventoryAttributes, InventoryCreation> {
+class Inventory extends Model<InventoryAttributes, InventoryCreation> {
   declare id: string;
   declare facilityNo: string;
   declare year: number;
   declare serialNo: string;
+  declare bloodId: string;
   declare dateOfProduce: Date;
   declare expiration: Date;
   declare bloodType: BloodType;
   declare component: ComponentType;
+  declare source: SourceType;
   declare units: number;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
 }
 
-BloodbankInventory.init(
+Inventory.init(
   {
     id: {
       type: DataTypes.UUID,
@@ -66,7 +72,11 @@ BloodbankInventory.init(
     serialNo: {
       type: DataTypes.STRING(10),
       allowNull: false,
-      unique: true,
+    },
+    bloodId: {
+      type: DataTypes.STRING(40),
+      allowNull: false,
+      unique: true,          // each blood unit bag is globally unique
     },
     dateOfProduce: {
       type: DataTypes.DATEONLY,
@@ -95,6 +105,11 @@ BloodbankInventory.init(
       ),
       allowNull: false,
     },
+    source: {
+      type: DataTypes.ENUM("walk-in", "appointment", "admin"),
+      allowNull: false,
+      defaultValue: "walk-in",
+    },
     units: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -103,10 +118,10 @@ BloodbankInventory.init(
   },
   {
     sequelize,
-    tableName: "bloodbank_inventory",
+    tableName: "inventory",
     timestamps: true,
     underscored: true,
   }
 );
 
-export default BloodbankInventory;
+export default Inventory;
