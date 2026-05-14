@@ -102,7 +102,7 @@ export async function createInventory(
     let facilityNo: string;
 
     if (role === "blood_bank") {
-      const bloodBank = await BloodBank.findOne({ where: { id: userId } });
+      const bloodBank = await BloodBank.findOne({ where: { userId } });
       if (!bloodBank || !bloodBank.facilityNo) {
         return res.status(400).json({
           message: "No facility number found for this blood bank account.",

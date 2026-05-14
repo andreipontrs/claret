@@ -10,6 +10,8 @@ import {
   decreaseInventory,
 } from "../controllers/inventory.form.controllers";
 
+import { getMyInventory } from "../controllers/inventory.controller";
+
 import { authenticateUser, authorizeRole } from "../middleware/auth.middleware";
 
 const router = Router();
@@ -66,5 +68,7 @@ router.patch(
   authorizeRole("blood_bank", "admin"),
   decreaseInventory
 );
+
+router.get("/my", authenticateUser, authorizeRole("blood_bank"), getMyInventory);
 
 export default router;
