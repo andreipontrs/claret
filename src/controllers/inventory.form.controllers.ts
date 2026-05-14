@@ -238,6 +238,14 @@ export async function createInventory(
         source
       );
 
+      console.log("FACILITY:", facilityNo);
+
+      const facilityExists = await BloodBank.findOne({
+        where: { facilityNo }
+      });
+
+      console.log("FACILITY EXISTS:", facilityExists);
+
       const entry = await Model.create({
         facilityNo,
         year,
