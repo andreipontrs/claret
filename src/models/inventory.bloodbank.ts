@@ -16,6 +16,12 @@ export type ComponentType =
 
 export type SourceType = "walk-in" | "appointment" | "admin";
 
+export type InventoryStatus =
+  | "available"
+  | "used"
+  | "expired"
+  | "disposed";
+
 interface InventoryAttributes {
   id: string;
   facilityNo: string;
@@ -26,7 +32,8 @@ interface InventoryAttributes {
   expiration: Date;
   bloodType: BloodType;
   component: ComponentType;
-  source: SourceType;        // ← NEW: walk-in | appointment | admin
+  source: SourceType; 
+  status: InventoryStatus;        // ← NEW: walk-in | appointment | admin
   units: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -49,6 +56,7 @@ class Inventory extends Model<InventoryAttributes, InventoryCreation> {
   declare bloodType: BloodType;
   declare component: ComponentType;
   declare source: SourceType;
+  declare status: InventoryStatus;
   declare units: number;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
@@ -109,6 +117,16 @@ Inventory.init(
       type: DataTypes.ENUM("walk-in", "appointment", "admin"),
       allowNull: false,
       defaultValue: "walk-in",
+    },
+    status: {
+      type: DataTypes.ENUM(
+        "available",
+        "used",
+        "expired",
+        "disposed"
+      ),
+      allowNull: false,
+      defaultValue: "available",
     },
     units: {
       type: DataTypes.INTEGER,

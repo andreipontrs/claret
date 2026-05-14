@@ -26,7 +26,7 @@ export const getMyInventory = async (req: Request, res: Response): Promise<void>
 
     // Now TypeScript knows facilityNo is string, not string | null
     const rows = await BloodbankInventory.findAll({
-    where: { facilityNo },  // ✅ no longer string | null
+    where: { facilityNo, status: "available", },  // ✅ no longer string | null
     attributes: ["bloodType", "component", "units"],
     order: [["bloodType", "ASC"]],
     });

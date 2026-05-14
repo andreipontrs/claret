@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { Op } from "sequelize";
 import { resolveInventoryModel } from "../helpers/resolveInventoryModel";
 import BloodBank from "../models/bloodbank";
-import { SourceType } from "../models/inventory.bloodbank";
+import { SourceType, InventoryStatus } from "../models/inventory.bloodbank";
 
 // ─────────────────────────────────────────────
 // EXPIRY RULES
@@ -167,13 +167,21 @@ export async function createInventory(
       bloodType,
       component,
       units,
+      status,
     }: {
       year: number;
       dateOfProduce: string;
       bloodType: string;
       component: string;
       units: number;
+      status: InventoryStatus;
     } = req.body;
+
+    if (!["available", "used", "expired", "disposed"].includes(status)) {
+      return res.status(400).json({
+        message: `Invalid status: ${status}`,
+      });
+    }
 
     // Resolve source: body > role default
     const sourceRaw: string =
@@ -240,6 +248,7 @@ export async function createInventory(
         bloodType: bloodType as any,
         component: component as any,
         source,
+        status,
         units: 1,          // every row = 1 bag
       });
 
