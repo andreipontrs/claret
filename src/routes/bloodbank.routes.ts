@@ -6,7 +6,6 @@ import {
   deleteBloodBank,
   getActiveBloodBanks,
   updateCoordinates,
-  updateFacilityNo,
   updateWalkInSchedule,
   getMe,
 } from "../controllers/bloodbank.controller";
@@ -70,13 +69,6 @@ router.patch(
   authenticateUser,
   authorizeRole("admin"),
   updateCoordinates
-);
-
-router.patch(
-  "/:id/facility-no",
-  authenticateUser,
-  authorizeRole("admin"),
-  updateFacilityNo
 );
 
 router.patch(

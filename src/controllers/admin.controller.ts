@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/user";
 import Role from "../models/role";
 import BloodBank from "../models/bloodbank";
+import { Op } from "sequelize";
 
 export async function adminLogin(req: Request, res: Response) {
   const { email, password } = req.body;
@@ -165,14 +166,9 @@ export const updateAdmin = async (
   }
 };
 
-export const updateBloodBank = async (
-  req: Request,
-  res: Response
-) => {
+export const updateBloodBank = async (req: Request, res: Response) => {
   try {
-
     const id = req.params.id as string;
-
     const {
       hospitalName,
       address,
@@ -183,27 +179,29 @@ export const updateBloodBank = async (
       email,
     } = req.body;
 
-    const existingEmail = await BloodBank.findOne({
-      where: { email },
-    });
-
-    if (
-      existingEmail &&
-      existingEmail.id !== id
-    ) {
-      return res.status(400).json({
-        message: "Email already exists",
-      });
-    }
-
+    // Find the blood bank first
     const bloodBank = await BloodBank.findByPk(id);
-
     if (!bloodBank) {
-      return res.status(404).json({
-        message: "Blood bank not found",
-      });
+      return res.status(404).json({ message: "Blood bank not found" });
     }
 
+    const oldEmail = bloodBank.email; 
+
+    if (email && email !== oldEmail) {
+      const existingBloodBankEmail = await BloodBank.findOne({
+        where: { email, id: { [Op.ne]: id } },
+      });
+      if (existingBloodBankEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+
+      const existingUserEmail = await User.findOne({ where: { email } });
+      if (existingUserEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+    }
+
+    // Update blood bank
     await bloodBank.update({
       hospitalName,
       address,
@@ -214,19 +212,27 @@ export const updateBloodBank = async (
       email,
     });
 
+    const updateUserFields: Partial<{
+      email: string;
+      firstName: string;
+    }> = {};
+
+    if (email && email !== oldEmail) updateUserFields.email = email;
+    if (hospitalName) updateUserFields.firstName = hospitalName;
+
+    if (Object.keys(updateUserFields).length > 0) {
+      await User.update(updateUserFields, {
+        where: { email: oldEmail }, 
+      });
+    }
+
     return res.json({
       success: true,
       message: "Blood bank updated successfully",
       bloodBank,
     });
-
   } catch (err) {
-
     console.error(err);
-
-    return res.status(500).json({
-      message: "Server error",
-    });
-
+    return res.status(500).json({ message: "Server error" });
   }
 };

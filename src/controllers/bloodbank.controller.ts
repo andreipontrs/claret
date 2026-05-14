@@ -6,7 +6,6 @@ import BloodBank from "../models/bloodbank";
 import BloodBankSchedule, { ALL_DAYS, DayOfWeek } from "../models/Bloodbank_schedule";
 import Role from "../models/role";
 import User from "../models/user";
-import Facility from "../models/facility";
 import { sendActivationEmail } from "../utils/email.bloodbank";
 import sequelize from "../config/database";
 
@@ -378,47 +377,6 @@ export async function updateCoordinates(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("UPDATE COORDINATES ERROR:", error);
-    return res.status(500).json({ message: "Server error." });
-  }
-}
-
-// ==============================
-// ADMIN: UPDATE FACILITY NO
-// ==============================
-export async function updateFacilityNo(req: Request, res: Response) {
-  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-
-  try {
-    const { facilityNo } = req.body;
-
-    if (!facilityNo) {
-      return res.status(400).json({ message: "facilityNo is required." });
-    }
-
-    const bank = await BloodBank.findByPk(id);
-    if (!bank) {
-      return res.status(404).json({ message: "Blood bank not found." });
-    }
-
-    // Upsert into facilities table first (required by FK constraint)
-    await Facility.findOrCreate({
-      where: { facility_no: facilityNo },
-      defaults: {
-        facility_no:   facilityNo,
-        facility_name: bank.hospitalName,
-        address:       bank.address,
-        contact_no:    bank.contactNo,
-      },
-    });
-
-    await bank.update({ facilityNo });
-
-    return res.status(200).json({
-      message: "Facility number updated successfully.",
-      data: { id: bank.id, facilityNo: bank.facilityNo },
-    });
-  } catch (error) {
-    console.error("UPDATE FACILITY NO ERROR:", error);
     return res.status(500).json({ message: "Server error." });
   }
 }

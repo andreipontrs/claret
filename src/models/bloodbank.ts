@@ -1,7 +1,6 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "../config/database";
 import Role from "./role";
-import Facility from "./facility";
 
 interface BloodBankAttributes {
   id: string;
@@ -134,11 +133,5 @@ BloodBank.init(
 
 BloodBank.belongsTo(Role, { foreignKey: "roleId", as: "role" });
 Role.hasMany(BloodBank, { foreignKey: "roleId", as: "bloodBanks" });
-
-BloodBank.belongsTo(Facility, {
-  foreignKey: "facilityNo",
-  targetKey: "facility_no",
-  as: "facility",
-});
 
 export default BloodBank;

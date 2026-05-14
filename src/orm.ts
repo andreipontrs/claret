@@ -13,7 +13,6 @@ import Content from "./models/landingContent";
 import About from "./models/about";
 import UserContent from "./models/userContent";
 import BloodbankContent from "./models/bloodbankContent";
-import Facility from "./models/facility";
 import Inventory from "./models/inventory.form";
 import BloodbankInventory from "./models/inventory.bloodbank";
 
@@ -34,7 +33,6 @@ const runORM = async () => {
       About,
       UserContent,
       BloodbankContent,
-      Facility,
       Inventory,
       BloodbankInventory,
     ];
@@ -74,26 +72,6 @@ const runORM = async () => {
     });
     BloodDonationAppointment.belongsTo(BloodBank, { foreignKey: "bloodBankId" });
 
-
-    // Facility ↔ Inventory
-    Facility.hasMany(Inventory, {
-      foreignKey: "facility_no",
-      sourceKey: "facility_no",
-      onDelete: "RESTRICT",
-    });
-
-    // Facility ↔ BloodbankInventory
-    Facility.hasMany(BloodbankInventory, {
-      foreignKey: "facility_no",
-      sourceKey: "facility_no",
-      onDelete: "RESTRICT",
-    });
-
-    Inventory.belongsTo(Facility, {
-      foreignKey: "facility_no",
-      targetKey: "facility_no",
-    });
-
     console.log("Associations defined");
 
     // 🔥 DEV ONLY: reset tables
@@ -114,17 +92,6 @@ const runORM = async () => {
     for (const roleName of roles) {
       await Role.findOrCreate({ where: { name: roleName } });
     }
-
-    // ✅ Seed default facility
-    await Facility.findOrCreate({
-      where: { facility_no: "FAC-001" },
-      defaults: {
-        facility_no: "FAC-001",
-        facility_name: "Philippine General Hospital Blood Bank",
-        address: "Taft Ave, Manila",
-        contact_no: "",
-      },
-    });
 
     console.log("Default roles and facility seeded");
 

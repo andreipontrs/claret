@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getMapInventory } from "../controllers/map.controllers";
-import { updateCoordinates, updateFacilityNo } from "../controllers/bloodbank.controller";
+import { updateCoordinates } from "../controllers/bloodbank.controller";
 import { authenticateUser, authorizeRole } from "../middleware/auth.middleware";
 
 const router = Router();
@@ -14,13 +14,6 @@ router.patch(
   authenticateUser,
   authorizeRole("admin"),
   updateCoordinates
-);
-
-router.patch(
-  "/blood-banks/:id/facility-no",
-  authenticateUser,
-  authorizeRole("admin"),
-  updateFacilityNo
 );
 
 export default router;
