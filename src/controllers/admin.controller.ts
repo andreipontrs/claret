@@ -169,24 +169,17 @@ export const updateAdmin = async (
 export const updateBloodBank = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const {
-      hospitalName,
-      address,
-      contactNo,
-      facilityNo,
-      lat,
-      lon,
-      email,
-    } = req.body;
+    const { hospitalName, address, contactNo, facilityNo, lat, lon, email } =
+      req.body;
 
-    // Find the blood bank first
     const bloodBank = await BloodBank.findByPk(id);
     if (!bloodBank) {
       return res.status(404).json({ message: "Blood bank not found" });
     }
 
-    const oldEmail = bloodBank.email; 
+    const oldEmail = bloodBank.email;
 
+    // Check email uniqueness
     if (email && email !== oldEmail) {
       const existingBloodBankEmail = await BloodBank.findOne({
         where: { email, id: { [Op.ne]: id } },
@@ -201,29 +194,47 @@ export const updateBloodBank = async (req: Request, res: Response) => {
       }
     }
 
-    // Update blood bank
-    await bloodBank.update({
-      hospitalName,
-      address,
-      contactNo,
-      facilityNo,
-      lat,
-      lon,
-      email,
-    });
+    // Check contactNo uniqueness
+    if (contactNo && contactNo !== bloodBank.contactNo) {
+      const existingBloodBankContact = await BloodBank.findOne({
+        where: { contactNo, id: { [Op.ne]: id } },
+      });
+      if (existingBloodBankContact) {
+        return res.status(400).json({ message: "Contact number already exists" });
+      }
 
+      const existingUserContact = await User.findOne({
+        where: { phoneNumber: contactNo },
+      });
+      if (existingUserContact) {
+        return res.status(400).json({ message: "Contact number already exists" });
+      }
+    }
+
+    // Check facilityNo uniqueness
+    if (facilityNo && facilityNo !== bloodBank.facilityNo) {
+      const existingFacilityNo = await BloodBank.findOne({
+        where: { facilityNo, id: { [Op.ne]: id } },
+      });
+      if (existingFacilityNo) {
+        return res.status(400).json({ message: "Facility number already exists" });
+      }
+    }
+
+    await bloodBank.update({ hospitalName, address, contactNo, facilityNo, lat, lon, email });
+
+    // Sync to linked User
     const updateUserFields: Partial<{
       email: string;
       firstName: string;
+      phoneNumber: string;
     }> = {};
-
     if (email && email !== oldEmail) updateUserFields.email = email;
     if (hospitalName) updateUserFields.firstName = hospitalName;
+    if (contactNo && contactNo !== bloodBank.contactNo) updateUserFields.phoneNumber = contactNo;
 
     if (Object.keys(updateUserFields).length > 0) {
-      await User.update(updateUserFields, {
-        where: { email: oldEmail }, 
-      });
+      await User.update(updateUserFields, { where: { email: oldEmail } });
     }
 
     return res.json({
