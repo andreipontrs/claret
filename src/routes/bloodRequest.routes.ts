@@ -7,7 +7,7 @@ import {
   getAllTransfusionRequests,
   getTransfusionRequestById,
   updateTransfusionRequest,
-  reviewTransfusionRequest,
+  // reviewTransfusionRequest,
   cancelTransfusionRequest,
   getMyBloodRequestNotifications,
   getMyTransfusionRequests,
@@ -164,13 +164,13 @@ router.get(
 );
 
 // Review (status transitions)
-router.patch(
-  "/transfusion-requests/:id/review",
-  authorizeRole("blood_bank", "admin"),
-  reviewTransfusionRequestValidation,
-  handleValidation,
-  reviewTransfusionRequest
-);
+// router.patch(
+//   "/transfusion-requests/:id/review",
+//   authorizeRole("blood_bank", "admin"),
+//   reviewTransfusionRequestValidation,
+//   handleValidation,
+//   reviewTransfusionRequest
+// );
 
 // Request clearer image — sets status to WAITING_FOR_REUPLOAD + sends email
 router.post(

@@ -12,7 +12,7 @@ import { Routes } from "./routes/routes";
 import "./models/index"
 
 // Jobs
-import { startAutoExpireJob } from "./jobs/autoExpireBloodRequests";
+// import { startAutoExpireJob } from "./jobs/autoExpireBloodRequests";
 import { startDonationReminderCron } from "./controllers/donationReminder.cron";
 
 const app = express();
@@ -89,7 +89,7 @@ const configureErrorHandler = (): void => {
  * Start background jobs
  */
 const startBackgroundJobs = (): void => {
-  startAutoExpireJob();
+  // startAutoExpireJob();
   console.log("Auto-expire job started");
 
   startDonationReminderCron();
