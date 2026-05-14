@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import BloodBank from "../models/bloodbank";
 import Role from "../models/role";
-import Facility from "../models/facility";
 import { resolveInventoryModel } from "../helpers/resolveInventoryModel";
 
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -15,7 +14,6 @@ export async function getMapInventory(
       where: { status: "active" },
       include: [
         { model: Role, as: "role" },
-        { model: Facility, as: "facility" },
       ],
     });
 
