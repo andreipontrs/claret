@@ -151,3 +151,44 @@ export const getAllInventoryAdmin = async (req: Request, res: Response): Promise
     res.status(500).json({ message: "Internal server error." });
   }
 };
+
+export async function getFacilities(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const role = (req as any).user?.role;
+
+    if (!role) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const facilities = await BloodBank.findAll({
+      attributes: [
+        "id",
+        "facilityNo",
+        "hospitalName",
+        "address",
+        "status",
+      ],
+      where: {
+        facilityNo: {
+          [require("sequelize").Op.not]: null,
+        },
+      },
+      order: [["hospitalName", "ASC"]],
+    });
+
+    return res.status(200).json({
+      message: "Facilities fetched successfully",
+      data: facilities,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      message: "Server error",
+      error: error?.message,
+    });
+  }
+}

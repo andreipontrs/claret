@@ -11,7 +11,7 @@ import {
   decreaseInventory,
 } from "../controllers/inventory.form.controllers";
 
-import { getMyInventory, getAllInventoryAdmin } from "../controllers/inventory.controller";
+import { getMyInventory, getAllInventoryAdmin, getFacilities } from "../controllers/inventory.controller";
 
 import { authenticateUser, authorizeRole } from "../middleware/auth.middleware";
 
@@ -21,6 +21,8 @@ const router = Router();
 router.use(authenticateUser);
 
 // ── Routes ──────────────────────────────────────────────────
+
+router.get("/facilities", authenticateUser, authorizeRole("admin"), getFacilities);
 
 // ✅ Create new inventory entry (admin/blood_bank only)
 router.post(
