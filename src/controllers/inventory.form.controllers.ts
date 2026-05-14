@@ -242,7 +242,7 @@ export async function createInventory(
         facilityNo,
         year,
         serialNo,
-        blood_id: bloodId, 
+        bloodId,
         dateOfProduce: new Date(dateOfProduce),
         expiration,
         bloodType: bloodType as any,
