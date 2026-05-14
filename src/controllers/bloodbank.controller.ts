@@ -32,6 +32,7 @@ export async function createBloodBankAccount(req: Request, res: Response) {
     walkInSchedule,
     lat,
     lon,
+    facilityNo, 
   } = req.body;
 
   const plainPassword = generatePassword(12);
@@ -45,10 +46,11 @@ export async function createBloodBankAccount(req: Request, res: Response) {
     const normalizedAddress = address?.trim();
     const normalizedContactNo = contactNo?.trim();
     const normalizedTelephoneNo = telephoneNo?.trim() || null;
+    const normalizedFacilityNo = facilityNo?.trim();
 
-    if (!normalizedEmail || !normalizedHospitalName || !normalizedAddress || !normalizedContactNo) {
+    if (!normalizedEmail || !normalizedHospitalName || !normalizedAddress || !normalizedContactNo || !normalizedFacilityNo) {
       return res.status(400).json({
-        message: "Email, hospital name, address, and contact number are required.",
+        message: "Email, hospital name, address, contact number, and facility number are required.",
       });
     }
 
@@ -81,6 +83,16 @@ export async function createBloodBankAccount(req: Request, res: Response) {
     if (existingPhoneUser || existingPhoneBank) {
       return res.status(409).json({
         message: "Contact number already in use.",
+      });
+    }
+
+    const existingFacilityNo = await BloodBank.findOne({
+      where: { facilityNo: normalizedFacilityNo },
+    });
+
+    if (existingFacilityNo) {
+      return res.status(409).json({
+        message: "Facility number already in use.",
       });
     }
 
@@ -123,6 +135,7 @@ export async function createBloodBankAccount(req: Request, res: Response) {
         email: normalizedEmail,
         password: hashedPassword,
         roleId: role.id,
+        facilityNo: normalizedFacilityNo, 
         status: "active",
         activationToken: token,
         activationTokenExpiry: expiry,
