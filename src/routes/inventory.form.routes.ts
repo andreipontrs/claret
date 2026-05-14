@@ -10,7 +10,7 @@ import {
   decreaseInventory,
 } from "../controllers/inventory.form.controllers";
 
-import { getMyInventory } from "../controllers/inventory.controller";
+import { getMyInventory, getAllInventoryAdmin } from "../controllers/inventory.controller";
 
 import { authenticateUser, authorizeRole } from "../middleware/auth.middleware";
 
@@ -69,6 +69,9 @@ router.patch(
   decreaseInventory
 );
 
+
 router.get("/my", authenticateUser, authorizeRole("blood_bank"), getMyInventory);
+router.get("/", authenticateUser, authorizeRole("admin"), getAllInventoryAdmin);
+
 
 export default router;

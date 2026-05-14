@@ -29,7 +29,12 @@ export async function getMapInventory(
             ? { facilityNo: bank.facilityNo }
             : {};
 
-          const allEntries = await Model.findAll({ where: whereClause });
+          const allEntries = await Model.findAll({
+            where: {
+              ...whereClause,
+              status: "available",
+            },
+          });
 
           const inventory: Record<string, number> = {};
           BLOOD_TYPES.forEach((bt) => (inventory[bt] = 0));
