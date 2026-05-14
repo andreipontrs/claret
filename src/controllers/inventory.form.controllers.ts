@@ -266,6 +266,45 @@ export async function createInventory(
 }
 
 // ─────────────────────────────────────────────
+// CREATE INVENTORY (ADMIN ONLY ENTRY POINT)
+// ─────────────────────────────────────────────
+export async function createInventoryAdmin(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const role = (req as any).user?.role;
+
+    if (role !== "admin") {
+      return res.status(403).json({
+        message: "Only admin can access this endpoint.",
+      });
+    }
+
+    const { facilityNo } = req.body;
+
+    if (!facilityNo) {
+      return res.status(400).json({
+        message: "facilityNo is required for admin inventory creation.",
+      });
+    }
+
+    // 🔥 FORCE facilityNo into request so core logic uses it
+    (req as any).body.facilityNo = facilityNo;
+
+    // optional safety: ensure admin source
+    (req as any).body.source = "admin";
+
+    return createInventory(req, res);
+  } catch (error: any) {
+    return res.status(500).json({
+      message: "Server error.",
+      error: error?.message,
+    });
+  }
+}
+
+// ─────────────────────────────────────────────
 // GET ALL
 // ─────────────────────────────────────────────
 export async function getAllInventory(
