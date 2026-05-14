@@ -128,7 +128,7 @@ async function generateScopedSerial(
  */
 function buildBloodId(
   facilityNo: string,
-  serialNo: string,       // "0001"
+  serialNo: string,  
   component: string,
   bloodType: string,
   expiration: Date,
@@ -242,7 +242,7 @@ export async function createInventory(
         facilityNo,
         year,
         serialNo,
-        bloodId,
+        blood_id: bloodId, 
         dateOfProduce: new Date(dateOfProduce),
         expiration,
         bloodType: bloodType as any,
