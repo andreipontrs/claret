@@ -21,6 +21,7 @@ export type RequestStatus =
 interface BloodTransfusionRequestAttributes {
   id: string;
   userId: string;
+  requestToId: string;
   date: Date;
   firstName: string;
   middleName?: string | null;
@@ -75,6 +76,7 @@ class BloodTransfusionRequest extends Model<
 > {
   declare id: string;
   declare userId: string;
+  declare requestToId: string;
   declare date: Date;
   declare firstName: string;
   declare middleName?: string | null;
@@ -114,6 +116,14 @@ BloodTransfusionRequest.init(
       type: DataTypes.UUID,
       allowNull: false,
       references: { model: "users", key: "id" },
+    },
+    requestToId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: "blood_banks",
+        key: "id",
+      },
     },
     date: {
       type: DataTypes.DATEONLY,

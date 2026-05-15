@@ -43,15 +43,10 @@ const ensureUploadDirectories = (): void => {
  */
 const configureMiddlewares = (): void => {
   app.use(
-    cors({
-      origin: [
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "https://claret.sbs",
-        "https://claret.claret.sbs",
-      ],
-      credentials: true,
-    })
+  cors({
+    origin: "*",
+    credentials: true,
+  })
   );
 
   app.use(express.json({ limit: "10mb" }));

@@ -22,7 +22,7 @@ router.use(authenticateUser);
 
 // ── Routes ──────────────────────────────────────────────────
 
-router.get("/facilities", authenticateUser, authorizeRole("admin"), getFacilities);
+router.get("/facilities", authenticateUser, authorizeRole( "client", "admin" ), getFacilities);
 
 // ✅ Create new inventory entry (admin/blood_bank only)
 router.post(

@@ -40,6 +40,7 @@ export async function createTransfusionRequest(
       zipCode,
       mobileNumber,
       email,
+      requestToId,
     }: {
       firstName: string;
       middleName?: string | null;
@@ -54,6 +55,7 @@ export async function createTransfusionRequest(
       zipCode: string;
       mobileNumber: string;
       email: string;
+      requestToId: string;
     } = req.body;
 
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
@@ -72,6 +74,7 @@ export async function createTransfusionRequest(
     const request = await BloodTransfusionRequest.create({
       date: new Date(),
       userId: currentUserId(req),
+      requestToId,
       firstName,
       middleName: middleName ?? null,
       lastName,

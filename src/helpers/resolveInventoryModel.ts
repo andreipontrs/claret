@@ -7,7 +7,7 @@ import { ModelStatic, Model } from "sequelize";
 export function resolveInventoryModel(role: string): ModelStatic<Model> {
   const normalized = role?.toLowerCase();
   switch (normalized) {
-    case "admin":       return Inventory;
+    case "admin":       return BloodbankInventory;
     case "blood_bank":  return BloodbankInventory;
     default:
       throw new Error(`Unauthorized role: ${role}`);
