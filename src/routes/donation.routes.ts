@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
-import { authenticateUser } from "../middleware/auth.middleware";
+import { authenticateUser, authorizeRole } from "../middleware/auth.middleware";
 import {
   createDonationAppointment,
   getAllDonationAppointments,
@@ -9,7 +9,8 @@ import {
   updateDonationAppointment,
   reviewDonationAppointment,
   cancelDonationAppointment,
-  getMyDonationNotifications, // ✅ added
+  getMyDonationNotifications,
+  getMyDonationAppointments // ✅ added
 } from "../controllers/donation.controller";
 import {
   validateCreateAppointment,
@@ -55,5 +56,12 @@ router.patch("/cancelDonation/:id/cancel", authenticateUser, validateIdParam, ca
 
 // ✅ Notifications
 router.get("/my-notifications", authenticateUser, getMyDonationNotifications);
+
+router.get(
+  "/my-donations",
+  authenticateUser,
+  authorizeRole("client"),
+  getMyDonationAppointments
+);
 
 export default router;

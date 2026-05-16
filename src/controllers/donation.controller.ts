@@ -511,3 +511,32 @@ export const getMyDonationNotifications = async (req: any, res: Response) => {
     res.status(500).json({ message: "Failed to fetch notifications" });
   }
 };
+
+export const getMyDonationAppointments = async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const donations = await BloodDonationAppointment.findAll({
+      where: {
+        userId,
+      },
+      order: [["createdAt", "DESC"]],
+    });
+
+    return res.status(200).json({
+      message: "My donation appointments fetched successfully",
+      data: donations,
+    });
+  } catch (error: any) {
+    console.error("GET MY DONATIONS ERROR:", error);
+
+    return res.status(500).json({
+      message: "Failed to fetch my donation appointments",
+      error: error.message,
+    });
+  }
+};

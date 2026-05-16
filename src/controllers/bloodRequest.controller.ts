@@ -9,6 +9,7 @@ import { restoreInventory } from "./inventory.form.controllers";
 import { sendClearerImageRequestEmail } from "../utils/email.service";
 import { sendSMS } from "../services/smsService";
 import { smsTemplates } from "../template/smsTemplates";
+import BloodBank from "../models/bloodbank";
 
 const currentUserId = (req: AuthRequest): string => req.user!.id;
 
@@ -19,6 +20,60 @@ interface AuthRequest extends Request {
     role: string;
   };
 }
+
+export const getMyBloodBankRequests = async (req: any, res: Response) => {
+  try {
+
+    const userId = req.user?.id;
+
+
+    if (!userId) {
+      console.log("❌ No user ID found");
+
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    // Find blood bank linked to logged in user
+    const bloodBank = await BloodBank.findOne({
+      where: {
+        userId: userId,
+      },
+    });
+
+
+    if (!bloodBank) {
+
+      return res.status(404).json({
+        message: "Blood bank account not found.",
+      });
+    }
+
+
+    // Get requests assigned to this blood bank
+    const requests = await BloodTransfusionRequest.findAll({
+      where: {
+        requestToId: bloodBank.id,
+      },
+      order: [["createdAt", "DESC"]],
+    });
+
+    return res.status(200).json({
+      message: "Blood bank requests fetched successfully.",
+      bloodBankId: bloodBank.id,
+      data: requests,
+    });
+  } catch (error: any) {
+    console.error("GET BLOOD BANK REQUESTS ERROR:", error);
+
+    return res.status(500).json({
+      message: "Failed to fetch requests.",
+      error: error.message,
+    });
+  }
+};
+
 // ── CREATE ────────────────────────────────────────────────────────────────────
 
 export async function createTransfusionRequest(
@@ -493,17 +548,33 @@ export const getMyBloodRequestNotifications = async (req: any, res: Response) =>
 // ── GET MY REQUESTS (client) ──────────────────────────────────────────────────
 
 export async function getMyTransfusionRequests(
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<Response> {
   try {
-    const userId = currentUserId(req);
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const requests = await BloodTransfusionRequest.findAll({
-      where: { userId },
-      order: [["date", "DESC"]],
+      where: {
+        userId,
+      },
+      order: [["createdAt", "DESC"]],
     });
-    return res.status(200).json({ data: requests });
-  } catch (error) {
-    return res.status(500).json({ message: "Server error.", error });
+
+    return res.status(200).json({
+      message: "My blood requests retrieved successfully.",
+      data: requests,
+    });
+  } catch (error: any) {
+    console.error("GET MY BLOOD REQUESTS ERROR:", error);
+
+    return res.status(500).json({
+      message: "Failed to fetch my blood requests.",
+      error: error.message,
+    });
   }
 }

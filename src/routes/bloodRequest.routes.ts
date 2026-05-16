@@ -12,7 +12,8 @@ import {
   getMyBloodRequestNotifications,
   getMyTransfusionRequests,
   requestClearerImage,   // ← new
-  reuploadReferral,      // ← new
+  reuploadReferral,  
+  getMyBloodBankRequests    // ← new
 } from "../controllers/bloodRequest.controller";
 
 import {
@@ -98,6 +99,13 @@ const reuploadUpload = multer({
 router.use(authenticateUser);
 
 // ── CLIENT ROUTES ─────────────────────────────────────────────────────────────
+
+router.get(
+  "/transfusion-requests/my-blood-bank-requests",
+  authenticateUser,
+  authorizeRole("blood_bank"),
+  getMyBloodBankRequests
+);
 
 // Specific routes FIRST — before any /:id routes
 router.get(
