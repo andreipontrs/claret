@@ -2,6 +2,16 @@ import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { adminLogin, getAdminAndBloodBanks, updateAdmin, updateBloodBank } from "../controllers/admin.controller";
 import { authenticateUser, authorizeRole } from "../middleware/auth.middleware";
+import {
+  getTotalClients,
+  getActiveBloodBanks,
+  getTotalDonations,
+  getActiveBloodUnits,
+  getPendingRequests,
+  getScheduledDonations,
+  getMonthlyDonations,
+  getMonthlyBloodNeeds
+} from "../controllers/adminDashboard.controller";
 
 const router = Router();
 
@@ -43,5 +53,15 @@ router.put(
   authorizeRole("admin"),
   updateBloodBank
 );
+
+
+router.get("/clients",            authenticateUser, authorizeRole("admin"), getTotalClients);
+router.get("/blood-banks",        authenticateUser, authorizeRole("admin"), getActiveBloodBanks);
+router.get("/donations",          authenticateUser, authorizeRole("admin"), getTotalDonations);
+router.get("/blood-units",        authenticateUser, authorizeRole("admin"), getActiveBloodUnits);
+router.get("/pending-requests",   authenticateUser, authorizeRole("admin"), getPendingRequests);
+router.get("/scheduled",          authenticateUser, authorizeRole("admin"), getScheduledDonations);
+router.get("/monthly-donations",  authenticateUser, authorizeRole("admin"), getMonthlyDonations);
+router.get("/monthly-blood-needs",  authenticateUser, authorizeRole("admin"), getMonthlyBloodNeeds);
 
 export default router;

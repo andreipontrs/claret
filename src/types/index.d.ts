@@ -9,9 +9,10 @@ declare global {
         role: string;
       };
     }
-    // This fixes: Namespace 'Express' has no exported member 'Multer'
     namespace Multer {
       interface File extends multer.File {}
     }
   }
 }
+
+export {};

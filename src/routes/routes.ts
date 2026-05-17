@@ -13,6 +13,7 @@ import inventoryRoutes from "./inventory.form.routes";
 import ocrRoutes from "./ocr.routes";
 import facilitiesRoutes from "./facilities.routes";
 import mapRoutes from "./map.routes";
+import BloodBank from "./bloodBank";
 
 export const Routes = (app: Express): void => {
   app.use("/api/auth", authRoutes);
@@ -26,6 +27,7 @@ export const Routes = (app: Express): void => {
   app.use("/api/inventory", inventoryRoutes);
   app.use("/api/ocr", ocrRoutes);
   app.use("/api/facilities", facilitiesRoutes);
+  app.use("/api/dashboard", BloodBank);
   app.use("/api", mapRoutes);
 
   // Health checks

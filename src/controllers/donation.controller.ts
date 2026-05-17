@@ -9,6 +9,7 @@ import BloodDonationAppointment, {
 import { sendAppointmentConfirmationEmail } from "../utils/email.service";
 import { sendSMS } from "../services/smsService";
 import { smsTemplates } from "../template/smsTemplates";
+import BloodBank from "../models/bloodbank";
 
 interface AuthRequest extends Request {
   user?: {
@@ -536,6 +537,46 @@ export const getMyDonationAppointments = async (req: any, res: Response) => {
 
     return res.status(500).json({
       message: "Failed to fetch my donation appointments",
+      error: error.message,
+    });
+  }
+};
+
+export const getMyBloodBankDonations = async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const bloodBank = await BloodBank.findOne({
+      where: { userId },
+    });
+
+    if (!bloodBank) {
+      return res.status(404).json({
+        message: "Blood bank account not found.",
+      });
+    }
+
+    const donations = await BloodDonationAppointment.findAll({
+      where: {
+        requestToId: bloodBank.id,
+      },
+      order: [["createdAt", "DESC"]],
+    });
+
+    return res.status(200).json({
+      message: "Blood bank donation appointments fetched successfully.",
+      bloodBankId: bloodBank.id,
+      data: donations,
+    });
+  } catch (error: any) {
+    console.error("GET BLOOD BANK DONATIONS ERROR:", error);
+
+    return res.status(500).json({
+      message: "Failed to fetch donation appointments.",
       error: error.message,
     });
   }

@@ -104,7 +104,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     res.status(201).json({
       message:
         "Account created successfully. Please check your email to verify your account.",
-      user: {
+      emailVerificationToken,
+        user: {
         id: newUser.id,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
@@ -272,13 +273,14 @@ export const verifyEmail = async (
       });
       return;
     }
-
+    console.log(1)
     await user.update({
       isEmailVerified: true,
       emailVerificationToken: null,
       emailVerificationTokenExpires: null,
     });
 
+    console.log(2)
     const roleName = await getUserRoleName(user.roleId);
 
     const jwtToken = generateToken({

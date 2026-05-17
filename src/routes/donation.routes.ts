@@ -10,7 +10,8 @@ import {
   reviewDonationAppointment,
   cancelDonationAppointment,
   getMyDonationNotifications,
-  getMyDonationAppointments // ✅ added
+  getMyDonationAppointments,
+  getMyBloodBankDonations
 } from "../controllers/donation.controller";
 import {
   validateCreateAppointment,
@@ -62,6 +63,13 @@ router.get(
   authenticateUser,
   authorizeRole("client"),
   getMyDonationAppointments
+);
+
+router.get(
+  "/bloodbank-donations",
+  authenticateUser,
+  authorizeRole("blood_bank"),
+  getMyBloodBankDonations
 );
 
 export default router;

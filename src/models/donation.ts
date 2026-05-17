@@ -64,6 +64,8 @@ interface DonationAppointmentAttributes {
 
   cancelReason?: string | null;
 
+  requestToId?: string | null;
+
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -144,6 +146,8 @@ class BloodDonationAppointment extends Model<
   public reviewedAt!: Date | null;
 
   public cancelReason!: string | null;
+
+  public requestToId!: string | null;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -236,6 +240,11 @@ BloodDonationAppointment.init(
 
     cancelReason: {
       type: DataTypes.TEXT,
+      allowNull: true,
+    },
+
+    requestToId: {
+      type: DataTypes.UUID,
       allowNull: true,
     },
   },
