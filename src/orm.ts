@@ -72,6 +72,22 @@ const runORM = async () => {
     });
     BloodDonationAppointment.belongsTo(BloodBank, { foreignKey: "bloodBankId" });
 
+    User.hasOne(Profile, {
+      foreignKey: "user_id",
+      as: "profile",
+      onDelete: "CASCADE",
+    });
+
+    Profile.belongsTo(User, {
+      foreignKey: "user_id",
+      as: "user",
+    });
+
+    User.belongsTo(Role, {
+      foreignKey: "roleId",
+      as: "role",
+    });
+
     console.log("Associations defined");
 
     // 🔥 DEV ONLY: reset tables
@@ -101,5 +117,7 @@ const runORM = async () => {
     process.exit(1);
   }
 };
+
+
 
 runORM();

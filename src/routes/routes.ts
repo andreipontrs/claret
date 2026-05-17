@@ -14,6 +14,9 @@ import ocrRoutes from "./ocr.routes";
 import facilitiesRoutes from "./facilities.routes";
 import mapRoutes from "./map.routes";
 import BloodBank from "./bloodBank";
+import clientRoutes from "./client.routes"
+
+import userRoutes from "./user";
 
 export const Routes = (app: Express): void => {
   app.use("/api/auth", authRoutes);
@@ -28,7 +31,9 @@ export const Routes = (app: Express): void => {
   app.use("/api/ocr", ocrRoutes);
   app.use("/api/facilities", facilitiesRoutes);
   app.use("/api/dashboard", BloodBank);
+  app.use("/api/client", clientRoutes);
   app.use("/api", mapRoutes);
+  app.use("/api/users", userRoutes);
 
   // Health checks
   app.get("/", (_req, res) => {
