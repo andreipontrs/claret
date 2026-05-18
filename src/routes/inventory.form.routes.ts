@@ -9,10 +9,10 @@ import {
   getInventorySummary,
   updateInventory,
   deleteInventory,
-  decreaseInventory,
+  decreaseInventory
 } from "../controllers/inventory.form.controllers";
 
-import { getMyInventory, getAllInventoryAdmin, getFacilities } from "../controllers/inventory.controller";
+import { getMyInventory, getInventoryByRequest, getAllInventoryAdmin, getFacilities } from "../controllers/inventory.controller";
 
 import { authenticateUser, authorizeRole } from "../middleware/auth.middleware";
 
@@ -88,6 +88,11 @@ router.patch(
 
 router.get("/my", authenticateUser, authorizeRole("blood_bank"), getMyInventory);
 router.get("/", authenticateUser, authorizeRole("admin"), getAllInventoryAdmin);
-
+router.get(
+  "/by-request/:requestId",
+  authenticateUser,
+  authorizeRole("admin", "blood_bank"),
+  getInventoryByRequest
+);
 
 export default router;

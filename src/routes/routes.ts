@@ -15,6 +15,7 @@ import facilitiesRoutes from "./facilities.routes";
 import mapRoutes from "./map.routes";
 import BloodBank from "./bloodBank";
 import clientRoutes from "./client.routes"
+import requests from "./request"
 
 import userRoutes from "./user";
 
@@ -22,6 +23,7 @@ export const Routes = (app: Express): void => {
   app.use("/api/auth", authRoutes);
   app.use("/api/bloodbanks", bloodbankRoutes);
   app.use("/api/blood-requests", bloodRequestRoutes);
+  app.use("/api/requests", requests);
   app.use("/api/profile", profileRoutes);
   app.use("/api/content", landingContentRoutes);
   app.use("/api/about", aboutRoutes);

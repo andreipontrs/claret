@@ -7,13 +7,14 @@ import {
   getAllTransfusionRequests,
   getTransfusionRequestById,
   updateTransfusionRequest,
-  // reviewTransfusionRequest,
+  updateBloodRequestStatus,
   cancelTransfusionRequest,
   getMyBloodRequestNotifications,
   getMyTransfusionRequests,
   requestClearerImage,   // ← new
   reuploadReferral,  
-  getMyBloodBankRequests    // ← new
+  getMyBloodBankRequests,
+  BloodRequestStatus    // ← new
 } from "../controllers/bloodRequest.controller";
 
 import {
@@ -98,6 +99,13 @@ const reuploadUpload = multer({
 // ── AUTH (applied to all routes below) ───────────────────────────────────────
 router.use(authenticateUser);
 
+router.patch(
+  "/:id/status",
+  authenticateUser,
+  authorizeRole("admin", "blood_bank"),
+  BloodRequestStatus
+);
+
 // ── CLIENT ROUTES ─────────────────────────────────────────────────────────────
 
 router.get(
@@ -171,14 +179,12 @@ router.get(
   getTransfusionRequestById
 );
 
-// Review (status transitions)
-// router.patch(
-//   "/transfusion-requests/:id/review",
-//   authorizeRole("blood_bank", "admin"),
-//   reviewTransfusionRequestValidation,
-//   handleValidation,
-//   reviewTransfusionRequest
-// );
+router.patch(
+  "/transfusion-requests/:id/status",
+  authorizeRole("blood_bank", "admin"),
+  handleValidation,
+  updateBloodRequestStatus
+);
 
 // Request clearer image — sets status to WAITING_FOR_REUPLOAD + sends email
 router.post(

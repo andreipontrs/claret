@@ -402,14 +402,19 @@ export async function getAllInventory(
 
     const where: Record<string, any> = {};
 
+    where.status = "available";
     if (role === "blood_bank") {
-      const bloodBank = await BloodBank.findOne({ where: { id: userId } });
+      const bloodBank = await BloodBank.findOne({
+        where: { userId: userId },
+      });
+
       if (!bloodBank?.facilityNo) {
-        return res.status(400).json({ message: "No facility found for this account." });
+        return res.status(400).json({
+          message: "No facility found for this account.",
+        });
       }
+
       where.facilityNo = bloodBank.facilityNo;
-    } else if (req.query.facilityNo) {
-      where.facilityNo = req.query.facilityNo;
     }
 
     if (bloodType) where.bloodType = bloodType;

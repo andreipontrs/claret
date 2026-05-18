@@ -22,6 +22,62 @@ interface AuthRequest extends Request {
   };
 }
 
+const ALLOWED_STATUS: RequestStatus[] = [
+  "PENDING",
+  "APPROVED",
+  "FULFILLED",
+  "REJECTED",
+  "CANCELLED",
+];
+
+export const BloodRequestStatus = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<Response> => {
+  try {
+    const { id } = req.params;
+    const status = String(req.body.status || "").toUpperCase() as RequestStatus;
+
+    if (!ALLOWED_STATUS.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status.",
+      });
+    }
+
+    const request = await BloodTransfusionRequest.findByPk(id);
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: "Blood request not found.",
+      });
+    }
+
+    await request.update({
+      status,
+      rejectionReason:
+        status === "REJECTED" || status === "CANCELLED"
+          ? req.body.reason || null
+          : null,
+      reviewedById: (req as any).user?.id || null,
+      reviewedAt: new Date(),
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Blood request marked as ${status}.`,
+      data: request,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error.",
+      error: error.message,
+    });
+  }
+};
+
 export const getMyBloodBankRequests = async (req: any, res: Response) => {
   try {
 

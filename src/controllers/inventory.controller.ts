@@ -4,6 +4,7 @@ import BloodBank from "../models/bloodbank";
 import BloodbankInventory from "../models/inventory.bloodbank";
 import { Op } from "sequelize";
 import { autoExpireInventory } from "../helpers/autoexpire"
+import BloodTransfusionRequest from "../models/bloodRequest";
 
 const BLOOD_TYPE_ORDER = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -74,6 +75,109 @@ export const getMyInventory = async (req: Request, res: Response): Promise<void>
     });
   } catch (error) {
     console.error("getMyInventory error:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const getInventoryByRequest = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const requestId = req.params.requestId as string;
+
+    const request = await BloodTransfusionRequest.findByPk(requestId);
+
+    if (!request) {
+      res.status(404).json({ message: "Blood request not found." });
+      return;
+    }
+
+    const bloodBankId = (request as any).requestToId;
+
+    if (!bloodBankId) {
+      res.status(400).json({
+        message: "This request has no assigned blood bank.",
+      });
+      return;
+    }
+
+    const bloodBank = await BloodBank.findByPk(bloodBankId);
+
+    if (!bloodBank) {
+      res.status(404).json({ message: "Assigned blood bank not found." });
+      return;
+    }
+
+    const { facilityNo } = bloodBank;
+
+    if (!facilityNo) {
+      res.status(400).json({
+        message: "Assigned blood bank has no facility number.",
+      });
+      return;
+    }
+
+    await autoExpireInventory(facilityNo);
+
+    const rows = await BloodbankInventory.findAll({
+      where: {
+        facilityNo,
+        status: "available",
+      },
+      attributes: ["bloodType", "component", "units"],
+      order: [["bloodType", "ASC"]],
+    });
+
+    const grouped: Record<
+      string,
+      { units: number; components: Record<string, number> }
+    > = {};
+
+    for (const row of rows) {
+      const { bloodType, component, units } = row as any;
+
+      if (!grouped[bloodType]) {
+        grouped[bloodType] = { units: 0, components: {} };
+      }
+
+      grouped[bloodType].units += units;
+
+      if (!grouped[bloodType].components[component]) {
+        grouped[bloodType].components[component] = 0;
+      }
+
+      grouped[bloodType].components[component] += units;
+    }
+
+    const BLOOD_TYPE_ORDER = [
+      "A+",
+      "A-",
+      "B+",
+      "B-",
+      "AB+",
+      "AB-",
+      "O+",
+      "O-",
+    ];
+
+    const summary = BLOOD_TYPE_ORDER
+      .filter((bt) => grouped[bt])
+      .map((bt) => ({
+        type: bt,
+        units: grouped[bt].units,
+        components: grouped[bt].components,
+      }));
+
+    res.status(200).json({
+      message: "Inventory fetched successfully.",
+      requestId,
+      bloodBankId,
+      facilityNo,
+      data: summary,
+    });
+  } catch (error) {
+    console.error("getInventoryByRequest error:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 };

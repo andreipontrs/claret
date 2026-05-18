@@ -284,7 +284,6 @@ export async function getAllDonationAppointments(
     return res.status(500).json({ message: "Server error.", error });
   }
 }
-
 // ── GET ONE ───────────────────────────────────────────────────────────────────
 
 export async function getDonationAppointmentById(
