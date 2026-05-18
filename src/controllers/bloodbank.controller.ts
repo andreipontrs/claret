@@ -442,3 +442,24 @@ export async function updateWalkInSchedule(req: Request, res: Response) {
     return res.status(500).json({ message: "Server error." });
   }
 }
+
+export async function getBloodBankSchedule(req: Request, res: Response) {
+  try {
+    const schedules = await BloodBankSchedule.findAll({
+      where: {
+        bloodBankId: req.params.bloodBankId,
+        open: true,
+      },
+      order: [["day", "ASC"]],
+    });
+
+    res.json({ success: true, data: schedules });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch schedule",
+      error: err.message,
+    });
+  }
+}
+

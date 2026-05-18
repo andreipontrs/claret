@@ -5,6 +5,7 @@ import sequelize from "../config/database";
 
 export type AppointmentStatus =
   | "APPROVED"
+  | "PENDING"
   | "REJECTED"
   | "CANCELLED"
   | "FULFILLED";
@@ -229,7 +230,7 @@ BloodDonationAppointment.init(
 
     // ✅ AUTO APPROVED — no pending anymore
     status: {
-      type: DataTypes.ENUM("APPROVED", "REJECTED", "CANCELLED", "FULFILLED"),
+      type: DataTypes.ENUM("APPROVED", "REJECTED", "PENDING", "CANCELLED", "FULFILLED"),
       allowNull: false,
       defaultValue: "APPROVED",
     },

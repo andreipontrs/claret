@@ -10,6 +10,7 @@ import { sendClearerImageRequestEmail } from "../utils/email.service";
 import { sendSMS } from "../services/smsService";
 import { smsTemplates } from "../template/smsTemplates";
 import BloodBank from "../models/bloodbank";
+import Inventory from "../models/inventory.bloodbank";
 
 const currentUserId = (req: AuthRequest): string => req.user!.id;
 
@@ -286,92 +287,134 @@ export async function updateTransfusionRequest(
   }
 }
 
-// ── REVIEW ────────────────────────────────────────────────────────────────────
+export async function updateBloodRequestStatus(
+  req: AuthRequest,
+  res: Response
+): Promise<Response> {
+  try {
+    const id = String(req.params.id);
+    const reviewerId = (req as any).user?.id;
 
-// export async function reviewTransfusionRequest(
-//   req: AuthRequest,
-//   res: Response
-// ): Promise<Response> {
-//   try {
-//     const id = req.params.id as string;
-//     const { status, blood_type, component, units, remarks } = req.body;
+    const {
+      status,
+      rejectionReason,
+      bloodType,
+      component,
+      bloodId,
+      remarks,
+    } = req.body;
 
-//     const request = await BloodTransfusionRequest.findByPk(id);
-//     if (!request) {
-//       return res.status(404).json({ message: "Blood request not found." });
-//     }
+    const allowedStatuses = [
+      "PENDING",
+      "APPROVED",
+      "FULFILLED",
+      "REJECTED",
+      "CANCELLED",
+    ];
 
-//     const allowedTransitions: Record<string, RequestStatus[]> = {
-//       PENDING:   ["APPROVED", "CANCELLED"],
-//       APPROVED:  ["FULFILLED", "CANCELLED"],
-//       FULFILLED: [],
-//       CANCELLED: [],
-//     };
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status." });
+    }
 
-//     const allowed = allowedTransitions[request.status] ?? [];
+    const request = await BloodTransfusionRequest.findByPk(id);
 
-//     if (!allowed.includes(status)) {
-//       return res.status(400).json({
-//         message: `Cannot transition from ${request.status} to ${status}.`,
-//       });
-//     }
+    if (!request) {
+      return res.status(404).json({
+        message: "Blood request not found.",
+      });
+    }
 
-//     // ── RESTORE INVENTORY IF CANCELLING AN APPROVED REQUEST ───────────────────
-//     if (status === "CANCELLED" && request.status === "APPROVED") {
-//       const bt   = request.bloodType;
-//       const comp = request.component;
-//       const u    = request.units;
+    if (status === "REJECTED" && !rejectionReason?.trim()) {
+      return res.status(400).json({
+        message: "Rejection reason is required.",
+      });
+    }
 
-//       if (bt && comp && u) {
-//         try {
-//           await restoreInventory(bt, comp, u, (req as any).user?.role);
-//         } catch (err) {
-//           console.error("Inventory restore failed:", err);
-//         }
-//       }
-//     }
+    if (status === "FULFILLED") {
+      if (!bloodType || !component || !bloodId) {
+        return res.status(400).json({
+          message: "bloodType, component, and bloodId are required when fulfilling.",
+        });
+      }
 
-//     // ── PERSIST STATUS + BLOOD DETAILS ────────────────────────────────────────
-//     await request.update({
-//       status,
-//       reviewedById: (req as any).user.id,
-//       reviewedAt: new Date(),
-//       // When approved, record which blood product was released
-//       ...(status === "APPROVED" && {
-//         ...(blood_type  && { bloodType: blood_type }),
-//         ...(component   && { component }),
-//         ...(units !== undefined && { units }),
-//         ...(remarks     && { remarks }),
-//         needsReupload: false,   // clear any pending flag on approval
-//       }),
-//     });
+      const inventory = await Inventory.findOne({
+        where: {
+          bloodId,
+          bloodType,
+          component,
+          status: "available",
+        },
+      });
 
-//     // ── SMS ON APPROVED ───────────────────────────────────────────────────────
-//     if (status === "APPROVED") {
-//       try {
-//         await sendSMS(
-//           request.mobileNumber,
-//           smsTemplates.bloodRequestApproved(
-//             request.firstName,
-//             request.id,
-//             request.bloodType ?? blood_type ?? "N/A",
-//             request.component ?? component ?? "N/A",
-//             request.units     ?? units     ?? 1
-//           )
-//         );
-//       } catch (smsErr) {
-//         console.error("❌ SMS ERROR (APPROVED):", smsErr);
-//       }
-//       }
+      if (!inventory) {
+        return res.status(404).json({
+          message: "Available inventory bag not found.",
+        });
+      }
 
-//     return res.status(200).json({
-//       message: `Blood request ${status.toLowerCase()}.`,
-//       data: request,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({ message: "Server error.", error });
-//   }
-// }
+      await inventory.update({
+        status: "used",
+      });
+    }
+
+    await request.update({
+      status,
+      reviewedById: reviewerId,
+      reviewedAt: new Date(),
+
+      ...(status === "REJECTED" && {
+        rejectionReason,
+      }),
+
+      ...(status === "FULFILLED" && {
+        bloodType,
+        component,
+        bloodId,
+        units: 1,
+        remarks: remarks || `Released blood ID: ${bloodId}`,
+      }),
+
+      ...(status === "APPROVED" && {
+        needsReupload: false,
+      }),
+    });
+
+    if (status === "APPROVED") {
+      try {
+        // await sendAppointmentConfirmationEmail({
+        //   to: request.email,
+        //   firstName: request.firstName,
+        //   appointmentDate: String(request.date),
+        //   appointmentTime: "",
+        // });
+
+        await sendSMS(
+          request.mobileNumber,
+          smsTemplates.bloodRequestApproved(
+            request.firstName,
+            request.id,
+            request.bloodType || "N/A",
+            request.component || "N/A",
+            request.units || 1
+          )
+        );
+      } catch (notifyErr) {
+        console.error("Notification error:", notifyErr);
+      }
+    }
+
+    return res.status(200).json({
+      message: `Blood request status changed to ${status}.`,
+      data: request,
+    });
+  } catch (error: any) {
+    console.error("UPDATE BLOOD REQUEST STATUS ERROR:", error);
+    return res.status(500).json({
+      message: "Server error.",
+      error: error.message,
+    });
+  }
+}
 
 // ── CANCEL (client) ───────────────────────────────────────────────────────────
 

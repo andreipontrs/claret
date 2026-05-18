@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
   createInventory,
   createInventoryAdmin,
+  createInventoryAppointment,
   getAllInventory,
   getInventoryById,
   getInventorySummary,
@@ -35,6 +36,12 @@ router.post(
   "/createinventory",
   authorizeRole("admin"),
   createInventoryAdmin
+);
+
+router.post(
+  "/createinventoryappointment",
+  authorizeRole("admin", "blood_bank"),
+  createInventoryAppointment
 );
 
 // ✅ Get all inventory entries with filters

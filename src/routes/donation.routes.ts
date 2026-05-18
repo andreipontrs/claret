@@ -11,7 +11,8 @@ import {
   cancelDonationAppointment,
   getMyDonationNotifications,
   getMyDonationAppointments,
-  getMyBloodBankDonations
+  getMyBloodBankDonations,
+  updateDonationAppointmentStatus
 } from "../controllers/donation.controller";
 import {
   validateCreateAppointment,
@@ -54,6 +55,7 @@ router.get("/getDonation/:id", authenticateUser, validateIdParam, getDonationApp
 router.put("/updateDonation/:id", authenticateUser, uploadFields, validateUpdateAppointment, updateDonationAppointment);
 router.patch("/reviewDonation/:id/review", authenticateUser, validateReviewAppointment, reviewDonationAppointment);
 router.patch("/cancelDonation/:id/cancel", authenticateUser, validateIdParam, cancelDonationAppointment);
+router.patch("/:id/status", authenticateUser, authorizeRole("admin", "blood_bank"), updateDonationAppointmentStatus);
 
 // ✅ Notifications
 router.get("/my-notifications", authenticateUser, getMyDonationNotifications);

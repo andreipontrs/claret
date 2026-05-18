@@ -96,7 +96,7 @@ Profile.init(
     occupation:   { type: DataTypes.STRING, allowNull: true },
     civilStatus:  { type: DataTypes.STRING(50), allowNull: true },
 
-    bloodType:         { type: DataTypes.STRING(5), allowNull: true },
+    bloodType:         { type: DataTypes.STRING(20), allowNull: true },
     medicalConditions: { type: DataTypes.TEXT, allowNull: true },
 
     willingToDonate: {

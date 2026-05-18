@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import User from "../models/user";
 import Role from "../models/role";
 import { sendVerificationEmail, sendResetPasswordEmail, sendAdminCredentialsEmail } from "../utils/email.service";
+import sequelize from "../config/database";
 
 const generateRandomPassword = (length = 12): string => {
   const chars =
@@ -42,6 +43,8 @@ const getUserRoleName = async (roleId: string): Promise<string> => {
 
 // ─── Register ─────────────────────────────────────────────
 export const register = async (req: Request, res: Response): Promise<void> => {
+  const transaction = await sequelize.transaction();
+
   try {
     const {
       firstName,
@@ -55,24 +58,28 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     } = req.body;
 
     if (password !== confirmPassword) {
+      await transaction.rollback();
       res.status(400).json({ message: "Passwords do not match." });
       return;
     }
 
     const existingEmail = await User.findOne({ where: { email } });
     if (existingEmail) {
+      await transaction.rollback();
       res.status(409).json({ message: "Email is already registered." });
       return;
     }
 
     const existingPhone = await User.findOne({ where: { phoneNumber } });
     if (existingPhone) {
+      await transaction.rollback();
       res.status(409).json({ message: "Phone number is already registered." });
       return;
     }
 
     const clientRole = await Role.findOne({ where: { name: "client" } });
     if (!clientRole) {
+      await transaction.rollback();
       res.status(500).json({
         message: "Default role not found. Please run ORM seeder.",
       });
@@ -86,26 +93,30 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       Date.now() + 24 * 60 * 60 * 1000
     );
 
-    const newUser = await User.create({
-      firstName,
-      middleName: middleName || null,
-      lastName,
-      suffix: suffix || null,
-      email,
-      phoneNumber,
-      password: hashedPassword,
-      roleId: clientRole.id,
-      emailVerificationToken,
-      emailVerificationTokenExpires,
-    });
+    const newUser = await User.create(
+      {
+        firstName,
+        middleName: middleName || null,
+        lastName,
+        suffix: suffix || null,
+        email,
+        phoneNumber,
+        password: hashedPassword,
+        roleId: clientRole.id,
+        emailVerificationToken,
+        emailVerificationTokenExpires,
+      },
+      { transaction }
+    );
 
     await sendVerificationEmail(email, firstName, emailVerificationToken);
+
+    await transaction.commit();
 
     res.status(201).json({
       message:
         "Account created successfully. Please check your email to verify your account.",
-      emailVerificationToken,
-        user: {
+      user: {
         id: newUser.id,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
@@ -115,8 +126,14 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (error) {
+    await transaction.rollback();
+
     console.error("Registration error:", error);
-    res.status(500).json({ message: "Internal server error." });
+
+    res.status(500).json({
+      message:
+        "Registration failed because verification email could not be sent.",
+    });
   }
 };
 

@@ -107,6 +107,8 @@ const startServer = async (): Promise<void> => {
     await sequelize.authenticate();
     console.log("DB connected");
 
+    await sequelize.sync({ alter: true });
+
     startBackgroundJobs();
 
     app.listen(PORT, () => {

@@ -34,6 +34,12 @@ interface InventoryCreation
     "id" | "createdAt" | "updatedAt"
   > {}
 
+  export type InventoryStatus =
+  | "available"
+  | "used"
+  | "expired"
+  | "disposed";
+
 class Inventory extends Model<InventoryAttributes, InventoryCreation> {
   declare id: string;
   declare facilityNo: string;

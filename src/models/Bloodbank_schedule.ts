@@ -57,14 +57,18 @@ class BloodBankSchedule
 BloodBankSchedule.init(
   {
     id: {
-      type: DataTypes.CHAR(36),
+      type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
     bloodBankId: {
-      type: DataTypes.CHAR(36),
+      type: DataTypes.UUID,
       allowNull: false,
       field: "blood_bank_id",
+      references: {
+        model: "blood_banks",
+        key: "id",
+      },
     },
     day: {
       type: DataTypes.ENUM(

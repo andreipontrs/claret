@@ -7,6 +7,6 @@ const router = Router();
 router.use(authenticateUser);
 
 // GET /api/facilities — admin only
-router.get("/", authorizeRole("admin"), getFacilities);
+router.get("/", authorizeRole("admin", "client"), getFacilities);
 
 export default router;

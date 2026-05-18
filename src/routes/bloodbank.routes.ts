@@ -8,6 +8,7 @@ import {
   updateCoordinates,
   updateWalkInSchedule,
   getMe,
+  getBloodBankSchedule
 } from "../controllers/bloodbank.controller";
 import { authenticateUser, authorizeRole } from "../middleware/auth.middleware";
 import { handleValidation } from "../middleware/handleValidation";
@@ -80,4 +81,10 @@ router.patch(
   updateWalkInSchedule
 );
 
+router.get(
+  "/:bloodBankId",
+  authenticateUser,
+  authorizeRole("client"),
+  getBloodBankSchedule
+);
 export default router;

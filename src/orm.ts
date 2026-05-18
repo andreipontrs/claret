@@ -38,12 +38,6 @@ const runORM = async () => {
     ];
     console.log("Models registered:", models.map((m) => m.name));
 
-    // ── Associations ──────────────────────────────────────────
-
-    // User ↔ Profile
-    User.hasOne(Profile, { foreignKey: "user_id", onDelete: "CASCADE" });
-    Profile.belongsTo(User, { foreignKey: "user_id" });
-
     // User ↔ BloodTransfusionRequest
     User.hasMany(BloodTransfusionRequest, {
       foreignKey: "userId",
@@ -53,11 +47,15 @@ const runORM = async () => {
 
     // BloodBank ↔ BloodTransfusionRequest
     BloodBank.hasMany(BloodTransfusionRequest, {
-      foreignKey: "bloodBankId",
+      foreignKey: "requestToId",
+      as: "bloodRequests",
       onDelete: "CASCADE",
     });
-    BloodTransfusionRequest.belongsTo(BloodBank, { foreignKey: "bloodBankId" });
 
+    BloodTransfusionRequest.belongsTo(BloodBank, {
+      foreignKey: "requestToId",
+      as: "requestTo",
+    });
     // User ↔ BloodDonationAppointment
     User.hasMany(BloodDonationAppointment, {
       foreignKey: "userId",
@@ -91,7 +89,7 @@ const runORM = async () => {
     console.log("Associations defined");
 
     // 🔥 DEV ONLY: reset tables
-    await sequelize.sync({ force: true });
+    await sequelize.sync({ alter: true });
     console.log("All tables synced");
 
     // ✅ Seed About (single row)

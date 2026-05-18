@@ -29,6 +29,7 @@ interface InventoryAttributes {
   serialNo: string;
   bloodId: string;           // ← NEW: e.g. fac-001-00010180713261
   dateOfProduce: Date;
+  produceTime: string;
   expiration: Date;
   bloodType: BloodType;
   component: ComponentType;
@@ -52,6 +53,7 @@ class Inventory extends Model<InventoryAttributes, InventoryCreation> {
   declare serialNo: string;
   declare bloodId: string;
   declare dateOfProduce: Date;
+  declare produceTime: string;
   declare expiration: Date;
   declare bloodType: BloodType;
   declare component: ComponentType;
@@ -88,6 +90,10 @@ Inventory.init(
     },
     dateOfProduce: {
       type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
+    produceTime: {
+      type: DataTypes.TIME,
       allowNull: false,
     },
     expiration: {

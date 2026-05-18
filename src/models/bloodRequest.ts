@@ -16,6 +16,7 @@ export type RequestStatus =
   | "PENDING"
   | "APPROVED"
   | "FULFILLED"
+  | "REJECTED"
   | "CANCELLED";
 
 interface BloodTransfusionRequestAttributes {
@@ -42,6 +43,7 @@ interface BloodTransfusionRequestAttributes {
   rejectionReason?: string | null;
   reviewedById?: string | null;
   reviewedAt?: Date | null;
+  bloodId?: string | null;
   bloodType?: string | null;
   component?: string | null;
   units?: number | null;
@@ -62,6 +64,7 @@ interface BloodTransfusionRequestCreation
     | "rejectionReason"
     | "reviewedById"
     | "reviewedAt"
+    | "bloodId"
     | "bloodType"
     | "component"
     | "units"
@@ -97,6 +100,7 @@ class BloodTransfusionRequest extends Model<
   declare rejectionReason?: string | null;
   declare reviewedById?: string | null;
   declare reviewedAt?: Date | null;
+  declare bloodId?: string | null;
   declare bloodType?: string | null;
   declare component?: string | null;
   declare units?: number | null;
@@ -155,9 +159,15 @@ BloodTransfusionRequest.init(
       defaultValue: [],
     },
     status: {
-      type: DataTypes.ENUM("PENDING", "APPROVED", "FULFILLED", "CANCELLED"),
+      type: DataTypes.ENUM(
+        "PENDING",
+        "APPROVED",
+        "FULFILLED",
+        "REJECTED",
+        "CANCELLED"
+      ),
       allowNull: false,
-      defaultValue: "PENDING",   // ← was WAITING_FOR_APPROVAL
+      defaultValue: "PENDING",
     },
     needsReupload: {
       type: DataTypes.BOOLEAN,
@@ -171,6 +181,10 @@ BloodTransfusionRequest.init(
       references: { model: "users", key: "id" },
     },
     reviewedAt:  { type: DataTypes.DATE,    allowNull: true },
+    bloodId: {
+      type: DataTypes.STRING(40),
+      allowNull: true,
+    },
     bloodType:   { type: DataTypes.STRING,  allowNull: true },
     component:   { type: DataTypes.STRING,  allowNull: true },
     units:       { type: DataTypes.INTEGER, allowNull: true },

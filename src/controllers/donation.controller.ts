@@ -29,6 +29,7 @@ export async function createDonationAppointment(
 ): Promise<Response> {
   try {
     const {
+      requestToId,
       firstName,
       middleName,
       lastName,
@@ -52,6 +53,7 @@ export async function createDonationAppointment(
       appointmentTime,
       locationAddress,
     }: {
+      requestToId: string
       firstName: string;
       middleName?: string | null;
       lastName: string;
@@ -80,6 +82,7 @@ export async function createDonationAppointment(
 
     // ── Validate required fields ──────────────────────────────────────────
     const missing: string[] = [];
+    if (!requestToId)       missing.push("requestToId");
     if (!firstName)       missing.push("firstName");
     if (!lastName)        missing.push("lastName");
     if (!birthday)        missing.push("birthday");
@@ -114,6 +117,7 @@ export async function createDonationAppointment(
 
     // ── Persist record ────────────────────────────────────────────────────
     const appointment = await BloodDonationAppointment.create({
+      requestToId: requestToId ?? null,
       submittedAt: new Date(),
       userId: (req.user as any).id,
       firstName,
@@ -139,33 +143,8 @@ export async function createDonationAppointment(
       appointmentTime,
       locationAddress: locationAddress ?? null,
       attachments,
-      status: "APPROVED",
+      status: "PENDING",
     });
-
-    // ── Send confirmation email ───────────────────────────────────────────
-    try {
-      await sendAppointmentConfirmationEmail({
-        to: email,
-        firstName,
-        appointmentDate,
-        appointmentTime,
-      });
-    } catch (emailErr) {
-      console.error("❌ EMAIL ERROR:", emailErr);
-    }
-
-    // ── Send confirmation SMS to donor ────────────────────────────────────
-    try {
-      const formattedDate = new Date(appointmentDate).toLocaleDateString("en-PH", {
-        year: "numeric", month: "long", day: "numeric",
-      });
-      await sendSMS(
-        mobileNumber,
-        smsTemplates.donationSuccess(firstName, formattedDate, locationAddress ?? "our blood bank")
-      );
-    } catch (smsErr) {
-      console.error("❌ SMS ERROR:", smsErr);
-    }
 
     return res.status(201).json({
       message: "Donation appointment submitted successfully.",
@@ -174,6 +153,81 @@ export async function createDonationAppointment(
   } catch (error) {
     console.error("createDonationAppointment error:", error);
     return res.status(500).json({ message: "Server error.", error });
+  }
+}
+
+export async function updateDonationAppointmentStatus(
+  req: AuthRequest,
+  res: Response
+): Promise<Response> {
+  try {
+    const id = String(req.params.id);
+    const { status } = req.body;
+
+    const allowedStatuses = ["PENDING", "APPROVED", "FULFILLED", "REJECTED", "CANCELLED"];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status",
+      });
+    }
+
+    const appointment = await BloodDonationAppointment.findByPk(id);
+
+    if (!appointment) {
+      return res.status(404).json({
+        message: "Donation appointment not found",
+      });
+    }
+
+    const oldStatus = appointment.status;
+
+    await appointment.update({ status });
+
+    if (oldStatus !== "APPROVED" && status === "APPROVED") {
+      try {
+        await sendAppointmentConfirmationEmail({
+          to: appointment.email,
+          firstName: appointment.firstName,
+          appointmentDate: String(appointment.appointmentDate),
+          appointmentTime: appointment.appointmentTime,
+        });
+      } catch (emailErr) {
+        console.error("❌ EMAIL ERROR:", emailErr);
+      }
+
+      try {
+        const formattedDate = new Date(
+          appointment.appointmentDate
+        ).toLocaleDateString("en-PH", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+
+        await sendSMS(
+          appointment.mobileNumber,
+          smsTemplates.donationSuccess(
+            appointment.firstName,
+            formattedDate,
+            appointment.locationAddress ?? "our blood bank"
+          )
+        );
+      } catch (smsErr) {
+        console.error("❌ SMS ERROR:", smsErr);
+      }
+    }
+
+    return res.status(200).json({
+      message: `Donation appointment status updated to ${status}`,
+      data: appointment,
+    });
+  } catch (error) {
+    console.error("updateDonationAppointmentStatus error:", error);
+    return res.status(500).json({
+      message: "Server error",
+      error,
+    });
   }
 }
 
@@ -311,6 +365,11 @@ export async function updateDonationAppointment(
 
     const oldDate = appointment.appointmentDate;
 
+    const oldStatus = appointment.status;
+
+    const isScheduleChanged =
+      appointmentDate !== undefined || appointmentTime !== undefined;
+      
     await appointment.update({
       ...(firstName && { firstName }),
       ...(middleName !== undefined && { middleName: middleName ?? null }),
@@ -335,6 +394,8 @@ export async function updateDonationAppointment(
       ...(appointmentTime && { appointmentTime }),
       ...(locationAddress !== undefined && { locationAddress: locationAddress || null }),
       ...(newAttachments.length > 0 && { attachments: newAttachments }),
+
+      ...(isScheduleChanged && oldStatus === "APPROVED" && { status: "PENDING" }),
     });
 
     // ── Send reschedule SMS if appointment date changed ───────────────────

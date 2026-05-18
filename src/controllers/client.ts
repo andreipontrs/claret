@@ -33,9 +33,7 @@ export const getClientDashboardCounts = async (
         appointmentDate: {
           [Op.gte]: today,
         },
-        status: {
-          [Op.notIn]: ["APPROVED"],
-        },
+        status: "APPROVED",
       },
     });
 

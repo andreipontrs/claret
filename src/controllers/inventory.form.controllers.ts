@@ -164,6 +164,7 @@ export async function createInventory(
     const {
       year,
       dateOfProduce,
+      produceTime,
       bloodType,
       component,
       units,
@@ -171,6 +172,7 @@ export async function createInventory(
     }: {
       year: number;
       dateOfProduce: string;
+      produceTime: string;
       bloodType: string;
       component: string;
       units: number;
@@ -244,6 +246,7 @@ export async function createInventory(
         serialNo,
         bloodId,
         dateOfProduce: new Date(dateOfProduce),
+        produceTime,
         expiration,
         bloodType: bloodType as any,
         component: component as any,
@@ -281,7 +284,7 @@ export async function createInventoryAdmin(
       });
     }
 
-    const { facilityNo } = req.body;
+    const { facilityNo, produceTime } = req.body;
 
     if (!facilityNo) {
       return res.status(400).json({
@@ -289,13 +292,86 @@ export async function createInventoryAdmin(
       });
     }
 
+    if (!produceTime) {
+      return res.status(400).json({
+        message: "produceTime is required.",
+      });
+    }
+
     // 🔥 FORCE facilityNo into request so core logic uses it
     (req as any).body.facilityNo = facilityNo;
 
+    (req as any).body.produceTime = produceTime;
     // optional safety: ensure admin source
     (req as any).body.source = "admin";
 
     return createInventory(req, res);
+  } catch (error: any) {
+    return res.status(500).json({
+      message: "Server error.",
+      error: error?.message,
+    });
+  }
+}
+
+export async function createInventoryAppointment(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const role = (req as any).user?.role;
+
+    if (role !== "admin" && role !== "blood_bank") {
+      return res.status(403).json({
+        message: "Only admin and blood bank can access this endpoint.",
+      });
+    }
+
+    const { requestToId, produceTime } = req.body;
+
+    const bloodBankId = requestToId;
+
+    if (!requestToId) {
+      return res.status(400).json({
+        message: "requestId is required.",
+      });
+    }
+
+    if (!produceTime) {
+      return res.status(400).json({
+        message: "produceTime is required.",
+      });
+    }
+    
+    if (!bloodBankId) {
+      return res.status(400).json({
+        message: "requestId is required.",
+      });
+    }
+
+    const bloodBank = await BloodBank.findByPk(requestToId);
+
+    if (!bloodBank) {
+      return res.status(404).json({
+        message: "Blood bank not found.",
+      });
+    }
+
+    const facilityNo = bloodBank.facilityNo;
+
+    if (!facilityNo) {
+      return res.status(400).json({
+        message: "Selected blood bank has no facility number.",
+      });
+    }
+
+    (req as any).body.facilityNo = facilityNo;
+    (req as any).body.produceTime = produceTime;
+
+    (req as any).body.source = "appointment";
+
+    return createInventory(req, res);
+
   } catch (error: any) {
     return res.status(500).json({
       message: "Server error.",
