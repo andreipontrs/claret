@@ -49,6 +49,7 @@ class Inventory extends Model<InventoryAttributes, InventoryCreation> {
   declare expiration: Date;
   declare bloodType: BloodType;
   declare component: ComponentType;
+  declare status: InventoryStatus;
   declare units: number;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;

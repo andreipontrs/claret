@@ -25,16 +25,17 @@ export type InventoryStatus =
 interface InventoryAttributes {
   id: string;
   facilityNo: string;
+  donationAppointmentId: string;
   year: number;
   serialNo: string;
-  bloodId: string;           // ← NEW: e.g. fac-001-00010180713261
+  bloodId: string;    
   dateOfProduce: Date;
   produceTime: string;
   expiration: Date;
   bloodType: BloodType;
   component: ComponentType;
   source: SourceType; 
-  status: InventoryStatus;        // ← NEW: walk-in | appointment | admin
+  status: InventoryStatus;        
   units: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -49,6 +50,7 @@ interface InventoryCreation
 class Inventory extends Model<InventoryAttributes, InventoryCreation> {
   declare id: string;
   declare facilityNo: string;
+  declare donationAppointmentId: string;
   declare year: number;
   declare serialNo: string;
   declare bloodId: string;
@@ -74,6 +76,11 @@ Inventory.init(
     facilityNo: {
       type: DataTypes.STRING(20),
       allowNull: false,
+    },
+    donationAppointmentId: {
+      type: DataTypes.STRING,
+      allowNull: true,      
+      defaultValue: null,
     },
     year: {
       type: DataTypes.INTEGER,

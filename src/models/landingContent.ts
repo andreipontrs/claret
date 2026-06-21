@@ -16,8 +16,8 @@ export interface ContentAttributes {
   content: string | null;
   file_path: string | null;
   order: number;
-  event_date: string | null;
-  event_time: string | null;
+  event_start_date: string | null;
+  event_end_date: string | null;
   location: string | null;
   location_address: string | null;
   location_unit: string | null;
@@ -32,8 +32,8 @@ interface ContentCreationAttributes
     | "content"
     | "file_path"
     | "order"
-    | "event_date"
-    | "event_time"
+    | "event_start_date"
+    | "event_end_date"
     | "location"
     | "location_address"
     | "location_unit"
@@ -52,8 +52,8 @@ class Content
   public content!: string | null;
   public file_path!: string | null;
   public order!: number;
-  public event_date!: string | null;
-  public event_time!: string | null;
+  public event_start_date!: string | null;
+  public event_end_date!: string | null;
   public location!: string | null;
   public location_address!: string | null;
   public location_unit!: string | null;
@@ -105,11 +105,11 @@ Content.init(
       allowNull: false,
       defaultValue: 0,
     },
-    event_date: {
+    event_start_date: {
       type: DataTypes.DATEONLY,
       allowNull: true,
     },
-    event_time: {
+    event_end_date: {
       type: DataTypes.STRING,
       allowNull: true,
     },

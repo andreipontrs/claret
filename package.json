@@ -27,11 +27,13 @@
         "express": "^5.2.1",
         "express-validator": "^7.3.1",
         "helmet": "^8.1.0",
+        "json2csv": "^6.0.0-alpha.2",
         "jsonwebtoken": "^9.0.3",
         "multer": "^2.1.1",
         "mysql2": "^3.22.3",
         "node-cron": "^4.2.1",
         "nodemailer": "^8.0.2",
+        "pdfkit": "^0.18.0",
         "pg": "^8.20.0",
         "pg-hstore": "^2.3.4",
         "sequelize": "^6.37.8",
@@ -40,6 +42,8 @@
         "uuid": "^13.0.0"
     },
     "devDependencies": {
+        "@types/json2csv": "^5.0.7",
+        "@types/pdfkit": "^0.17.6",
         "ts-node-dev": "^2.0.0"
     }
 }

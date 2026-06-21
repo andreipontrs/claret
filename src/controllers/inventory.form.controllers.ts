@@ -90,10 +90,6 @@ const toStr = (val: string | string[] | undefined): string | undefined => {
   return Array.isArray(val) ? val[0] : val;
 };
 
-/**
- * Format expiry date as MMDDYY
- * e.g. July 13 2026 → "071326"
- */
 function formatExpirySegment(date: Date): string {
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
@@ -101,13 +97,6 @@ function formatExpirySegment(date: Date): string {
   return `${mm}${dd}${yy}`;
 }
 
-/**
- * Generate the next serial number scoped to:
- *   facility + bloodType + component
- *
- * Counts existing records with that combo, then increments.
- * Returns zero-padded 4-digit string e.g. "0001".
- */
 async function generateScopedSerial(
   Model: any,
   facilityNo: string,
@@ -120,15 +109,9 @@ async function generateScopedSerial(
   return String(count + 1).padStart(4, "0");
 }
 
-/**
- * Build the blood ID string from its parts.
- *
- * Format: {facilityNo}-{serialNo}{componentCode}{bloodTypeCode}{expiryMMDDYY}{sourceCode}
- * Example: fac-001-00010180713261
- */
 function buildBloodId(
   facilityNo: string,
-  serialNo: string,  
+  serialNo: string,
   component: string,
   bloodType: string,
   expiration: Date,
@@ -179,13 +162,15 @@ export async function createInventory(
       status: InventoryStatus;
     } = req.body;
 
+    const donationAppointmentId: string | null =
+      req.body.donationAppointmentId ?? req.body.appointmentId ?? null;
+
     if (!["available", "used", "expired", "disposed"].includes(status)) {
       return res.status(400).json({
         message: `Invalid status: ${status}`,
       });
     }
 
-    // Resolve source: body > role default
     const sourceRaw: string =
       req.body.source ??
       (role === "admin" ? "admin" : "walk-in");
@@ -195,7 +180,6 @@ export async function createInventory(
     }
     const source = sourceRaw as SourceType;
 
-    // ── Resolve facilityNo ──────────────────────
     let facilityNo: string;
     if (role === "blood_bank") {
       const bloodBank = await BloodBank.findOne({ where: { userId } });
@@ -218,12 +202,9 @@ export async function createInventory(
 
     const expiration = calcExpiry(dateOfProduce, component);
 
-    // ── Create one row per unit (each bag gets its own bloodId) ──
     const createdEntries: any[] = [];
 
     for (let i = 0; i < units; i++) {
-      // Serial is scoped to facility + bloodType + component.
-      // Re-query each iteration so concurrent inserts don't clash.
       const serialNo = await generateScopedSerial(
         Model,
         facilityNo,
@@ -252,7 +233,8 @@ export async function createInventory(
         component: component as any,
         source,
         status,
-        units: 1,          // every row = 1 bag
+        units: 1,
+        donationAppointmentId: donationAppointmentId ?? null,
       });
 
       createdEntries.push(entry);
@@ -298,11 +280,8 @@ export async function createInventoryAdmin(
       });
     }
 
-    // 🔥 FORCE facilityNo into request so core logic uses it
     (req as any).body.facilityNo = facilityNo;
-
     (req as any).body.produceTime = produceTime;
-    // optional safety: ensure admin source
     (req as any).body.source = "admin";
 
     return createInventory(req, res);
@@ -327,7 +306,8 @@ export async function createInventoryAppointment(
       });
     }
 
-    const { requestToId, produceTime } = req.body;
+    const { requestToId, produceTime, appointmentId } = req.body;
+    console.log("📋 createInventoryAppointment received appointmentId:", appointmentId);
 
     const bloodBankId = requestToId;
 
@@ -342,7 +322,7 @@ export async function createInventoryAppointment(
         message: "produceTime is required.",
       });
     }
-    
+
     if (!bloodBankId) {
       return res.status(400).json({
         message: "requestId is required.",
@@ -367,8 +347,8 @@ export async function createInventoryAppointment(
 
     (req as any).body.facilityNo = facilityNo;
     (req as any).body.produceTime = produceTime;
-
     (req as any).body.source = "appointment";
+    (req as any).body.donationAppointmentId = appointmentId ?? null;
 
     return createInventory(req, res);
 
@@ -529,7 +509,6 @@ export async function getInventorySummary(
     bloodTypes.forEach((bt) => {
       summary[bt] = {
         type: bt,
-        // units now = count of rows (each row = 1 bag)
         units: 0,
         components: Object.fromEntries(ALL_COMPONENTS.map((c) => [c, 0])),
       };
@@ -538,7 +517,7 @@ export async function getInventorySummary(
     allEntries.forEach((entry: any) => {
       const bt = entry.bloodType;
       if (!summary[bt]) return;
-      summary[bt].units += entry.units;  // units is always 1 per row
+      summary[bt].units += entry.units;
       if (summary[bt].components[entry.component] !== undefined) {
         summary[bt].components[entry.component] += entry.units;
       }
@@ -593,7 +572,6 @@ export async function updateInventory(
         )
       : entry.expiration;
 
-    // Rebuild bloodId if any of its segments changed
     const newBloodId = (dateOfProduce || component || source)
       ? buildBloodId(
           entry.facilityNo,
@@ -684,11 +662,10 @@ export async function decreaseInventory(
       where.facilityNo = bloodBank.facilityNo;
     }
 
-    // Each row = 1 unit bag; FIFO by dateOfProduce
     const entries = await Model.findAll({
       where,
       order: [["dateOfProduce", "ASC"]],
-      limit: units,   // we only need `units` rows at most
+      limit: units,
     }) as any[];
 
     if (entries.length < units) {
@@ -697,7 +674,6 @@ export async function decreaseInventory(
       });
     }
 
-    // Destroy exactly `units` rows (oldest first)
     const toRemove = entries.slice(0, units);
     const removedIds = toRemove.map((e: any) => e.bloodId);
 
@@ -746,5 +722,98 @@ export async function restoreInventory(
       source,
       units: 1,
     });
+  }
+}
+
+export async function previewInventoryAppointment(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const role = (req as any).user?.role;
+
+    if (role !== "admin" && role !== "blood_bank") {
+      return res.status(403).json({
+        message: "Only admin and blood bank can access this endpoint.",
+      });
+    }
+
+    const { requestToId, dateOfProduce, bloodType, component } = req.body;
+
+    if (!requestToId) {
+      return res.status(400).json({ message: "requestToId is required." });
+    }
+    if (!dateOfProduce || !bloodType || !component) {
+      return res.status(400).json({
+        message: "dateOfProduce, bloodType, and component are required.",
+      });
+    }
+    if (!ALL_COMPONENTS.includes(component)) {
+      return res.status(400).json({ message: `Invalid component: ${component}` });
+    }
+
+    const bloodBank = await BloodBank.findByPk(requestToId);
+    if (!bloodBank) {
+      return res.status(404).json({ message: "Blood bank not found." });
+    }
+    const facilityNo = bloodBank.facilityNo;
+    if (!facilityNo) {
+      return res.status(400).json({
+        message: "Selected blood bank has no facility number.",
+      });
+    }
+
+    const source: SourceType = "appointment";
+    const expiration = calcExpiry(dateOfProduce, component);
+
+    const Model = resolveInventoryModel(role);
+    const serialNo = await generateScopedSerial(Model, facilityNo, bloodType, component);
+    const bloodId = buildBloodId(facilityNo, serialNo, component, bloodType, expiration, source);
+
+    return res.status(200).json({
+      message: "Preview generated.",
+      bloodId,
+      expiration,
+      facilityNo,
+      serialNo,
+    });
+  } catch (error: any) {
+    console.error("PREVIEW INVENTORY ERROR:", error?.message);
+    return res.status(500).json({ message: "Server error.", error: error?.message });
+  }
+}
+
+export async function getInventoryByAppointmentId(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const role  = (req as any).user?.role;
+    const Model = resolveInventoryModel(role);
+
+    const { appointmentId } = req.params;
+
+    if (!appointmentId) {
+      return res.status(400).json({ message: "appointmentId is required." });
+    }
+
+    const entry = await Model.findOne({
+      where: { donationAppointmentId: appointmentId },
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (!entry) {
+      return res.status(404).json({
+        message: "No inventory record found for this appointment.",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Inventory record retrieved.",
+      data: entry,
+    });
+  } catch (error: any) {
+    console.error("GET INVENTORY BY APPOINTMENT ERROR:", error?.message);
+    return res.status(500).json({ message: "Server error.", error: error?.message });
   }
 }

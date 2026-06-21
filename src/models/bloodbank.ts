@@ -16,7 +16,7 @@ interface BloodBankAttributes {
   telephoneNo: string | null;
   lat: number | null;
   lon: number | null;
-  facilityNo: string | null;
+  facilityNo: string;
   userId?: string | null;
 }
 
@@ -50,7 +50,7 @@ class BloodBank
   public activationTokenExpiry!: Date | null;
   public lat!: number | null;
   public lon!: number | null;
-  public facilityNo!: string | null;
+  public facilityNo!: string;
   public userId?: string | null;
 }
 
@@ -112,7 +112,7 @@ BloodBank.init(
     },
     facilityNo: {
       type: DataTypes.STRING(50),
-      allowNull: true,
+      allowNull: false,
       field: "facility_no",
     },
     userId: {

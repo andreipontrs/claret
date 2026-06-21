@@ -48,7 +48,7 @@ export async function createBloodBankAccount(req: Request, res: Response) {
     const normalizedTelephoneNo = telephoneNo?.trim() || null;
     const normalizedFacilityNo = facilityNo?.trim();
 
-    if (!normalizedEmail || !normalizedHospitalName || !normalizedAddress || !normalizedContactNo || !normalizedFacilityNo) {
+    if (!normalizedEmail || !normalizedHospitalName || !normalizedAddress || !normalizedContactNo) {
       return res.status(400).json({
         message: "Email, hospital name, address, contact number, and facility number are required.",
       });
@@ -86,16 +86,6 @@ export async function createBloodBankAccount(req: Request, res: Response) {
       });
     }
 
-    const existingFacilityNo = await BloodBank.findOne({
-      where: { facilityNo: normalizedFacilityNo },
-    });
-
-    if (existingFacilityNo) {
-      return res.status(409).json({
-        message: "Facility number already in use.",
-      });
-    }
-
     const role = await Role.findOne({
       where: { name: "blood_bank" },
     });
@@ -123,6 +113,21 @@ export async function createBloodBankAccount(req: Request, res: Response) {
       { transaction }
     );
 
+    const lastBank = await BloodBank.findOne({
+      order: [["createdAt", "DESC"]],
+      attributes: ["facilityNo"],
+      transaction,
+    });
+
+    let nextFacilityNo = "FAC-001";
+
+    if (lastBank?.facilityNo) {
+      const match = lastBank.facilityNo.match(/^FAC-(\d+)$/);
+      if (match) {
+        const next = parseInt(match[1], 10) + 1;
+        nextFacilityNo = `FAC-${String(next).padStart(3, "0")}`;
+      }
+    }
     // =========================
     // 2. CREATE BLOOD BANK
     // =========================
@@ -135,7 +140,7 @@ export async function createBloodBankAccount(req: Request, res: Response) {
         email: normalizedEmail,
         password: hashedPassword,
         roleId: role.id,
-        facilityNo: normalizedFacilityNo, 
+        facilityNo: nextFacilityNo, 
         status: "active",
         activationToken: token,
         activationTokenExpiry: expiry,

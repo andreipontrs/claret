@@ -9,7 +9,9 @@ import {
   getInventorySummary,
   updateInventory,
   deleteInventory,
-  decreaseInventory
+  decreaseInventory,
+  previewInventoryAppointment,
+  getInventoryByAppointmentId
 } from "../controllers/inventory.form.controllers";
 
 import { getMyInventory, getInventoryByRequest, getAllInventoryAdmin, getFacilities } from "../controllers/inventory.controller";
@@ -94,5 +96,8 @@ router.get(
   authorizeRole("admin", "blood_bank"),
   getInventoryByRequest
 );
+
+router.get("/by-appointment/:appointmentId", authenticateUser, authorizeRole("blood_bank", "admin"), getInventoryByAppointmentId);
+router.post("/appointment/preview", authenticateUser, authorizeRole("blood_bank", "admin"), previewInventoryAppointment);
 
 export default router;
