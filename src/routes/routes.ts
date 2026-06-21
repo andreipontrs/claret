@@ -16,6 +16,7 @@ import mapRoutes from "./map.routes";
 import BloodBank from "./bloodBank";
 import clientRoutes from "./client.routes"
 import requests from "./request"
+import report from "./report.routes"
 
 import userRoutes from "./user";
 
@@ -36,6 +37,7 @@ export const Routes = (app: Express): void => {
   app.use("/api/client", clientRoutes);
   app.use("/api", mapRoutes);
   app.use("/api/users", userRoutes);
+  app.use("/api/report", report);
 
   // Health checks
   app.get("/", (_req, res) => {
