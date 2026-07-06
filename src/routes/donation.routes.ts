@@ -4,6 +4,7 @@ import path from "path";
 import { authenticateUser, authorizeRole } from "../middleware/auth.middleware";
 import {
   createDonationAppointment,
+  createWalkInDonation,
   getAllDonationAppointments,
   getDonationAppointmentById,
   updateDonationAppointment,
@@ -50,6 +51,7 @@ const uploadFields = upload.fields([
 const router = Router();
 
 router.post("/createDonation", authenticateUser, uploadFields, validateCreateAppointment, createDonationAppointment);
+router.post("/walkin-requests", authenticateUser, authorizeRole("blood_bank"), createWalkInDonation);
 router.get("/getAllDonation", authenticateUser, validateListQuery, getAllDonationAppointments);
 router.get("/getDonation/:id", authenticateUser, validateIdParam, getDonationAppointmentById);
 router.put("/updateDonation/:id", authenticateUser, uploadFields, validateUpdateAppointment, updateDonationAppointment);

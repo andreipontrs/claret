@@ -404,6 +404,13 @@ export async function getAllDonationAppointments(
 
     const { count, rows } = await BloodDonationAppointment.findAndCountAll({
       where,
+      include: [
+        {
+          model: BloodBank,
+          as: "requestToBloodBank",
+          attributes: ["id", "hospitalName"],
+        }
+      ],
       order: [["appointmentDate", "ASC"]],
       limit: limitNum,
       offset,
@@ -764,6 +771,13 @@ export const getMyBloodBankDonations = async (req: any, res: Response) => {
       where: {
         requestToId: bloodBank.id,
       },
+      include: [
+        {
+          model: BloodBank,
+          as: "requestToBloodBank",
+          attributes: ["id", "hospitalName"],
+        }
+      ],
       order: [["createdAt", "DESC"]],
     });
 

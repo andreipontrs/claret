@@ -4,6 +4,7 @@ import Profile from "./profile";
 import BloodBank from "./bloodbank";
 import BloodTransfusionRequest from "./bloodRequest";
 import Content from "./landingContent";
+import BloodDonationAppointment from "./donation";
 
 // USER ↔ ROLE
 User.belongsTo(Role, {
@@ -38,9 +39,20 @@ Profile.belongsTo(User, {
   as: "user",
 });
 
+BloodDonationAppointment.belongsTo(BloodBank, {
+  foreignKey: "requestToId",
+  as: "requestToBloodBank", // lets the include populate item.requestToId as the BloodBank object
+});
+
+BloodBank.hasMany(BloodDonationAppointment, {
+  foreignKey: "requestToId",
+  as: "donationAppointments",
+});
+
 export {
   User,
   Role,
   BloodBank,
   Profile,
+  BloodDonationAppointment
 };
