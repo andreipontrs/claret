@@ -20,7 +20,12 @@ import report from "./report.routes"
 
 import userRoutes from "./user";
 
+import { apiLimiter } from "../middleware/rateLimit";
+
 export const Routes = (app: Express): void => {
+
+  app.use("/api", apiLimiter);
+
   app.use("/api/auth", authRoutes);
   app.use("/api/bloodbanks", bloodbankRoutes);
   app.use("/api/blood-requests", bloodRequestRoutes);
