@@ -156,6 +156,146 @@ export async function createDonationAppointment(
   }
 }
 
+export async function createWalkInDonation(
+  req: AuthRequest,
+  res: Response
+): Promise<Response> {
+  try {
+    const userId = req.user?.id;
+ 
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized. Blood bank authentication required.",
+      });
+    }
+ 
+    const bloodBank = await BloodBank.findOne({ where: { userId } });
+ 
+    if (!bloodBank) {
+      return res.status(404).json({
+        message: "Blood bank account not found.",
+      });
+    }
+ 
+    const {
+      firstName,
+      middleName,
+      lastName,
+      birthday,
+      age,
+      civilStatus,
+      sex,
+      street,
+      city,
+      province,
+      zipCode,
+      nationality,
+      religion,
+      education,
+      occupation,
+      telephoneNumber,
+      mobileNumber,
+      email,
+      bloodType,
+      guardianName,
+    }: {
+      firstName: string;
+      middleName?: string | null;
+      lastName: string;
+      birthday: string;
+      age: number | string;
+      civilStatus: CivilStatus;
+      sex: Sex;
+      street: string;
+      city: string;
+      province: string;
+      zipCode: string;
+      nationality?: string | null;
+      religion?: string | null;
+      education?: string | null;
+      occupation?: string | null;
+      telephoneNumber?: string | null;
+      mobileNumber: string;
+      email: string;
+      bloodType: BloodType;
+      guardianName?: string | null;
+    } = req.body;
+ 
+    // ── Validate required fields ──────────────────────────────────────────
+    const missing: string[] = [];
+    if (!firstName)    missing.push("firstName");
+    if (!lastName)     missing.push("lastName");
+    if (!birthday)     missing.push("birthday");
+    if (!civilStatus)  missing.push("civilStatus");
+    if (!sex)          missing.push("sex");
+    if (!street)       missing.push("street");
+    if (!city)         missing.push("city");
+    if (!province)     missing.push("province");
+    if (!zipCode)      missing.push("zipCode");
+    if (!mobileNumber) missing.push("mobileNumber");
+    if (!email)        missing.push("email");
+    if (!bloodType)    missing.push("bloodType");
+ 
+    if (missing.length > 0) {
+      return res.status(400).json({
+        message: "Missing required fields.",
+        fields: missing,
+      });
+    }
+ 
+    const parsedAge = typeof age === "string" ? parseInt(age, 10) : age;
+ 
+    if (parsedAge < 18 && !guardianName) {
+      return res.status(400).json({
+        message: "Guardian name is required for donors under 18.",
+        fields: ["guardianName"],
+      });
+    }
+ 
+    const now = new Date();
+ 
+    const appointment = await BloodDonationAppointment.create({
+      requestToId: bloodBank.id,
+      submittedAt: now,
+      userId: null,
+      firstName,
+      middleName: middleName ?? null,
+      lastName,
+      birthday: new Date(birthday),
+      age: parsedAge,
+      civilStatus,
+      sex,
+      street,
+      city,
+      province,
+      zipCode,
+      nationality: nationality || null,
+      religion: religion || null,
+      education: education || null,
+      occupation: occupation || null,
+      telephoneNumber: telephoneNumber || null,
+      mobileNumber,
+      email,
+      bloodType,
+      appointmentDate: now,
+      appointmentTime: now.toTimeString().slice(0, 5),
+      locationAddress: null,
+      attachments: [],
+      status: "APPROVED",
+      reviewedAt: now,
+      reviewedById: userId,
+    });
+ 
+    return res.status(201).json({
+      message: "Walk-in donation created and approved.",
+      data: appointment,
+    });
+  } catch (error: any) {
+    console.error("CREATE WALK-IN DONATION ERROR:", error);
+    return res.status(500).json({ message: "Server error.", error: error.message });
+  }
+}
+
 export async function updateDonationAppointmentStatus(
   req: AuthRequest,
   res: Response

@@ -817,3 +817,130 @@ export async function getInventoryByAppointmentId(
     return res.status(500).json({ message: "Server error.", error: error?.message });
   }
 }
+
+
+export async function getAllInventoryAllStatus(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const role   = (req as any).user?.role;
+    const userId = (req as any).user?.id;
+    const Model  = resolveInventoryModel(role);
+
+    const bloodType  = toStr(req.query.bloodType as string | string[] | undefined);
+    const component  = toStr(req.query.component as string | string[] | undefined);
+    const status     = toStr(req.query.status    as string | string[] | undefined);
+    const from       = toStr(req.query.from      as string | string[] | undefined);
+    const to         = toStr(req.query.to        as string | string[] | undefined);
+    const source     = toStr(req.query.source    as string | string[] | undefined);
+    const pageNum    = Math.max(1, parseInt(toStr(req.query.page  as string | string[] | undefined) ?? "1",  10));
+    const limitNum   = Math.min(100, Math.max(1, parseInt(toStr(req.query.limit as string | string[] | undefined) ?? "20", 10)));
+
+    const where: Record<string, any> = {};
+
+    if (role === "blood_bank") {
+      const bloodBank = await BloodBank.findOne({
+        where: { userId: userId },
+      });
+
+      if (!bloodBank?.facilityNo) {
+        return res.status(400).json({
+          message: "No facility found for this account.",
+        });
+      }
+
+      where.facilityNo = bloodBank.facilityNo;
+    } else if (role !== "admin" && role !== "superadmin") {
+      // Anyone who isn't blood_bank/admin/superadmin shouldn't hit this route.
+      return res.status(403).json({ message: "Not authorized." });
+    }
+
+    if (status)    where.status    = status;
+    if (bloodType) where.bloodType = bloodType;
+    if (component) where.component = component;
+    if (source)    where.source    = source;
+
+    if (from || to) {
+      where.dateOfProduce = {};
+      if (from) where.dateOfProduce[Op.gte] = new Date(from);
+      if (to)   where.dateOfProduce[Op.lte] = new Date(to);
+    }
+
+    const { count, rows } = await Model.findAndCountAll({
+      where,
+      order: [["createdAt", "DESC"]],
+      limit: limitNum,
+      offset: (pageNum - 1) * limitNum,
+    });
+
+    return res.status(200).json({
+      message: "Inventory retrieved.",
+      data: rows,
+      meta: {
+        total: count,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(count / limitNum),
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error.", error });
+  }
+}
+
+const ALLOWED_STATUSES = ["available", "used", "expired", "disposed"];
+
+export async function updateInventoryStatus(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const role   = (req as any).user?.role;
+    const userId = (req as any).user?.id;
+    const id = toStr(req.params.id as string | string[] | undefined);
+
+    if (!id) {
+      return res.status(400).json({ message: "Missing inventory id." });
+    }
+
+    const { status } = req.body;
+
+    if (!status || !ALLOWED_STATUSES.includes(status)) {
+      return res.status(400).json({
+        message: `Status must be one of: ${ALLOWED_STATUSES.join(", ")}.`,
+      });
+    }
+
+    const Model = resolveInventoryModel(role);
+    const item = await Model.findByPk(id);
+
+    if (!item) {
+      return res.status(404).json({ message: "Inventory item not found." });
+    }
+
+    if (role === "blood_bank") {
+      const bloodBank = await BloodBank.findOne({
+        where: { userId: userId },
+      });
+
+      if (!bloodBank?.facilityNo || (item as any).facilityNo !== bloodBank.facilityNo) {
+        return res.status(403).json({
+          message: "You are not authorized to edit this inventory item.",
+        });
+      }
+    } else if (role !== "admin" && role !== "superadmin") {
+      return res.status(403).json({ message: "Not authorized." });
+    }
+
+    (item as any).status = status;
+    await item.save();
+
+    return res.status(200).json({
+      message: "Inventory status updated.",
+      data: item,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error.", error });
+  }
+}

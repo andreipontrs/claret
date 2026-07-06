@@ -12,11 +12,11 @@ export const smsTemplates = {
     rescheduledBy: string
   ) =>
     `Hi ${firstName}, your donation on ${oldDate} has been moved to ${newDate} ` +
-    `at ${location}. Changed by: ${rescheduledBy}. - Claret`,
+    `at ${location}. Changed by: ${rescheduledBy}. - Agapay`,
 
   donationRejected: (firstName: string, reason: string) =>
     `Hi ${firstName}, your donation appointment was not approved. ` +
-    `Reason: ${reason}. Please contact us for assistance. - Claret`,
+    `Reason: ${reason}. Please contact us for assistance. - Agapay`,
 
   bloodRequestApproved: (
     firstName: string,
@@ -27,7 +27,7 @@ export const smsTemplates = {
   ) =>
     `Hi ${firstName}, your blood request (REQ #${reqId.slice(0, 8).toUpperCase()}) has been approved! ` +
     `Blood type: ${bloodType}, Component: ${bloodComponent}, Units: ${units} unit/s. ` +
-    `Please coordinate with us for pickup. Bring a valid ID. - Claret`,
+    `Please coordinate with us for pickup. Bring a valid ID. - Agapay`,
 
 
   bloodRequestRejected: (
@@ -36,11 +36,11 @@ export const smsTemplates = {
     reason: string
   ) =>
     `Hi ${firstName}, your ${bloodType} blood request was not approved. ` +
-    `Reason: ${reason}. Please visit us for assistance. - Claret`,
+    `Reason: ${reason}. Please visit us for assistance. - Agapay`,
 
   // ← ADD
   donationReminder: (name: string, date: string, time: string, location: string) =>
     `Hi ${name}! This is a reminder that your blood donation appointment is tomorrow, ${date} ` +
-    `at ${time} at ${location}. Thank you for saving lives! - Claret`,
+    `at ${time} at ${location}. Thank you for saving lives! - Agapay`,
 
 };

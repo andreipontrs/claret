@@ -214,6 +214,117 @@ export async function createTransfusionRequest(
   }
 }
 
+export async function createWalkInBloodRequest(
+  req: AuthRequest,
+  res: Response
+): Promise<Response> {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized. Blood bank authentication required.",
+      });
+    }
+
+    const bloodBank = await BloodBank.findOne({ where: { userId } });
+
+    if (!bloodBank) {
+      return res.status(404).json({
+        message: "Blood bank account not found.",
+      });
+    }
+
+    const {
+      firstName,
+      middleName,
+      lastName,
+      age,
+      birthday,
+      civilStatus,
+      sex,
+      bloodType,
+      component,
+      street,
+      city,
+      province,
+      zipCode,
+      mobileNumber,
+      email,
+    }: {
+      firstName: string;
+      middleName?: string | null;
+      lastName: string;
+      age: number;
+      birthday: string;
+      civilStatus: CivilStatus;
+      sex: Sex;
+      bloodType: string;
+      component: string;
+      street: string;
+      city: string;
+      province: string;
+      zipCode: string;
+      mobileNumber: string;
+      email: string;
+    } = req.body;
+
+    if (!firstName || !lastName || !age || !birthday || !civilStatus || !sex) {
+      return res.status(400).json({
+        message: "Missing required patient information.",
+      });
+    }
+
+    if (!bloodType || !component) {
+      return res.status(400).json({
+        message: "Blood type and component are required.",
+      });
+    }
+
+    if (!mobileNumber || !email) {
+      return res.status(400).json({
+        message: "Mobile number and email are required.",
+      });
+    }
+
+    const now = new Date();
+
+    const request = await BloodTransfusionRequest.create({
+      date: now,
+      userId: null,
+      requestToId: bloodBank.id,
+      firstName,
+      middleName: middleName ?? null,
+      lastName,
+      age,
+      birthday: new Date(birthday),
+      civilStatus,
+      sex,
+      bloodType,
+      component,
+      street,
+      city,
+      province,
+      zipCode,
+      mobileNumber,
+      email,
+      attachments: [],
+      status: "APPROVED",
+      needsReupload: false,
+      reviewedAt: now,
+      reviewedById: userId,
+    });
+
+    return res.status(201).json({
+      message: "Walk-in blood request created and approved.",
+      data: request,
+    });
+  } catch (error: any) {
+    console.error("CREATE WALK-IN BLOOD REQUEST ERROR:", error);
+    return res.status(500).json({ message: "Server error.", error: error.message });
+  }
+}
+
 // ── GET ALL ───────────────────────────────────────────────────────────────────
 
 export async function getAllTransfusionRequests(

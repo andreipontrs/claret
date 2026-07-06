@@ -21,7 +21,7 @@ export function validate(req: Request, res: Response, next: NextFunction) {
 
 const CIVIL_STATUSES = ["SINGLE", "MARRIED", "WIDOWED", "SEPARATED"] as const;
 const SEXES = ["MALE", "FEMALE"] as const;
-const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const;
+const BLOOD_TYPES = ["UNKNOWN", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const;
 
 const PH_MOBILE_REGEX = /^(\+?63|0)9\d{9}$/;
 const PH_TELEPHONE_REGEX = /^(\+?63|0)\d{9,10}$/;

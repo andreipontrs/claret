@@ -20,7 +20,7 @@ export const sendActivationEmail = async (
 ) => {
   try {
     await transporter.sendMail({
-      from: `"Claret Blood Bank System" <${process.env.EMAIL_USER}>`,
+      from: `"Agapay Blood Bank System" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Activate Your Blood Bank Account",
       html: `
@@ -29,7 +29,7 @@ export const sendActivationEmail = async (
           <h2 style="color: #d55757;">You're Invited!</h2>
 
           <p>
-            You have been invited to join the <strong>Claret Blood Bank System</strong>.
+            You have been invited to join the <strong>Agapay Blood Bank System</strong>.
           </p>
 
           <p><strong>Login Credentials:</strong></p>
@@ -46,7 +46,7 @@ export const sendActivationEmail = async (
           <hr style="margin: 20px 0;" />
 
           <p style="font-size: 12px; color: #aaa;">
-            © Claret Blood Bank System
+            © Agapay Blood Bank System
           </p>
         </div>
       `,

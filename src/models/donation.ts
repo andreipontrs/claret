@@ -13,13 +13,13 @@ export type AppointmentStatus =
 export type CivilStatus = "SINGLE" | "MARRIED" | "WIDOWED" | "SEPARATED";
 export type Sex = "MALE" | "FEMALE";
 export type BloodType =
-  | "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
+ | "UNKNOWN" | "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
 
 /* ── MAIN ATTRIBUTES ─────────────────────────────────── */
 
 interface DonationAppointmentAttributes {
   id: string;
-  userId: string;
+  userId?: string | null;
 
   submittedAt: Date;
 
@@ -103,7 +103,7 @@ class BloodDonationAppointment extends Model<
 > implements DonationAppointmentAttributes {
 
   public id!: string;
-  public userId!: string;
+  public userId?: string | null;
 
   public submittedAt!: Date;
 
@@ -166,7 +166,7 @@ BloodDonationAppointment.init(
 
     userId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
     },
 
     submittedAt: {
@@ -206,7 +206,7 @@ BloodDonationAppointment.init(
     email: { type: DataTypes.STRING, allowNull: false },
 
     bloodType: {
-      type: DataTypes.ENUM("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
+      type: DataTypes.ENUM("UNKNOWN", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
       allowNull: false,
     },
 

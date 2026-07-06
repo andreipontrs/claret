@@ -4,6 +4,7 @@ import path from "path";
 
 import {
   createTransfusionRequest,
+  createWalkInBloodRequest,
   getAllTransfusionRequests,
   getTransfusionRequestById,
   updateTransfusionRequest,
@@ -136,6 +137,11 @@ router.post(
   createTransfusionRequestValidation,
   handleValidation,
   createTransfusionRequest
+);
+router.post(
+  "/walkin-requests",
+  authorizeRole("blood_bank"),
+  createWalkInBloodRequest
 );
 
 // Update

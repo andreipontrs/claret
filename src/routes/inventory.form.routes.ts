@@ -11,7 +11,9 @@ import {
   deleteInventory,
   decreaseInventory,
   previewInventoryAppointment,
-  getInventoryByAppointmentId
+  getInventoryByAppointmentId,
+  updateInventoryStatus,
+  getAllInventoryAllStatus
 } from "../controllers/inventory.form.controllers";
 
 import { getMyInventory, getInventoryByRequest, getAllInventoryAdmin, getFacilities } from "../controllers/inventory.controller";
@@ -52,6 +54,10 @@ router.get(
   authorizeRole("blood_bank", "admin"),
   getAllInventory
 );
+
+router.patch("/:id/status", authorizeRole("blood_bank", "admin"), updateInventoryStatus);
+
+router.get("/all-status", authorizeRole("blood_bank", "admin"), getAllInventoryAllStatus);
 
 // ✅ Get inventory summary grouped by blood type (used by the cards page)
 router.get(
