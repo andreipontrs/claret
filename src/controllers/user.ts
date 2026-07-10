@@ -30,7 +30,18 @@ export const getAllUsers = async (req: Request, res: Response) => {
         {
           model: Profile,
           as: "profile",
-          attributes: ["gender", "dob", "willingToDonate", "needBlood"],
+          // ── added bloodType + address fields (street, city, province, zip) ──
+          attributes: [
+            "gender",
+            "dob",
+            "willingToDonate",
+            "needBlood",
+            "bloodType",
+            "street",
+            "city",
+            "province",
+            "zip",
+          ],
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -137,7 +148,15 @@ export const updateUser = async (req: Request, res: Response) => {
         {
           model: Profile,
           as: "profile",
-          attributes: ["gender", "dob"],
+          attributes: [
+            "gender",
+            "dob",
+            "bloodType",
+            "street",
+            "city",
+            "province",
+            "zip",
+          ],
         },
       ],
     });
