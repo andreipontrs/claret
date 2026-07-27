@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import BloodTransfusionRequest from "../models/bloodRequest";
-
 import Inventory from "../models/inventory.bloodbank";
+import { sendSMS } from "../services/smsService";
+import { smsTemplates } from "../template/smsTemplates";
 
 type Params = {
   id: string;
@@ -36,24 +37,57 @@ export const BloodRequestStatus = async (
     }
 
     if (status === "FULFILLED" && bloodId) {
-        const inventory = await Inventory.findOne({
-            where: { bloodId },
+      const inventory = await Inventory.findOne({
+        where: { bloodId },
+      });
+
+      if (!inventory) {
+        return res.status(404).json({
+          message: "Inventory not found.",
         });
+      }
 
-        if (!inventory) {
-            return res.status(404).json({
-            message: "Inventory not found.",
-            });
-        }
+      inventory.status = "used";
 
-        inventory.status = "used";
-
-        await inventory.save();
-        }
+      await inventory.save();
+    }
 
     request.reviewedAt = new Date();
 
     await request.save();
+
+    // ── Notify the patient by SMS based on status ──
+    if (status === "APPROVED") {
+      try {
+        await sendSMS(
+          request.mobileNumber,
+          smsTemplates.bloodRequestApproved(
+            request.firstName,
+            request.id,
+            request.bloodType || "N/A",
+            request.component || "N/A",
+            request.units || 1
+          )
+        );
+      } catch (notifyErr) {
+        console.error("Notification error:", notifyErr);
+      }
+    }
+
+    if (status === "CANCELLED") {
+      try {
+        await sendSMS(
+          request.mobileNumber,
+          smsTemplates.bloodRequestCancelled(
+            request.firstName,
+            request.bloodType || "N/A",
+            request.rejectionReason || undefined
+          )
+        );
+      } catch (notifyErr) {
+        console.error("Notification error:", notifyErr);
+      }
+    }
 
     return res.status(200).json({
       success: true,

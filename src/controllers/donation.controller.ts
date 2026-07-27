@@ -302,7 +302,7 @@ export async function updateDonationAppointmentStatus(
 ): Promise<Response> {
   try {
     const id = String(req.params.id);
-    const { status } = req.body;
+    const { status, reviewNotes } = req.body;
 
     const allowedStatuses = ["PENDING", "APPROVED", "FULFILLED", "REJECTED", "CANCELLED"];
 
@@ -351,6 +351,20 @@ export async function updateDonationAppointmentStatus(
             appointment.firstName,
             formattedDate,
             appointment.locationAddress ?? "our blood bank"
+          )
+        );
+      } catch (smsErr) {
+        console.error("❌ SMS ERROR:", smsErr);
+      }
+    }
+
+    if (status === "REJECTED") {
+      try {
+        await sendSMS(
+          appointment.mobileNumber,
+          smsTemplates.donationRejected(
+            appointment.firstName,
+            reviewNotes ?? "Please contact us for more details."
           )
         );
       } catch (smsErr) {

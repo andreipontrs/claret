@@ -32,8 +32,15 @@ export const sendSMS = async (
     return { success: true, messageId: "dry-run" };
   }
 
+  // Sanity check: make sure the token actually loaded before we bother calling the API
+  if (!process.env.IPROG_API_TOKEN) {
+    const errMsg = "IPROG_API_TOKEN is missing from environment variables";
+    console.error(`[SMS] ${mode} | ❌ Failed to ${formattedTo}: ${errMsg}`);
+    return { success: false, error: errMsg };
+  }
+
   try {
-   const response = await axios.post(`${IPROG_BASE_URL}/sms_messages`, {
+    const response = await axios.post(`${IPROG_BASE_URL}/sms_messages`, {
       api_token:    process.env.IPROG_API_TOKEN,
       phone_number: formattedTo,
       message:      message,
@@ -42,7 +49,25 @@ export const sendSMS = async (
     // Debug: see exactly what IPROG returns
     console.log("IPROG Raw Response:", JSON.stringify(response.data, null, 2));
 
-    const messageId = response.data?.message_id;
+    const data = response.data;
+
+    // IPROG can return HTTP 200 with an error embedded in the body
+    // (e.g. { status: 500, message: "Invalid Token" }), so axios won't
+    // throw on its own — we have to check the body's status ourselves.
+    if (data?.status && data.status !== 200) {
+      const errMsg = data.message || "Unknown IPROG error";
+      console.error(`[SMS] ${mode} | ❌ Failed to ${formattedTo}: ${errMsg}`);
+      return { success: false, error: errMsg };
+    }
+
+    const messageId = data?.message_id;
+
+    if (!messageId) {
+      const errMsg = "IPROG returned no message_id despite a 200 status";
+      console.error(`[SMS] ${mode} | ❌ Failed to ${formattedTo}: ${errMsg}`);
+      return { success: false, error: errMsg };
+    }
+
     console.log(`[SMS] ${mode} | ✅ Sent to ${formattedTo} | ID: ${messageId}`);
     return { success: true, messageId };
 

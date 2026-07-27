@@ -43,4 +43,11 @@ export const smsTemplates = {
     `Hi ${name}! This is a reminder that your blood donation appointment is tomorrow, ${date} ` +
     `at ${time} at ${location}. Thank you for saving lives! - Agapay`,
 
+    bloodRequestCancelled: (
+    firstName: string,
+    bloodType: string,
+    reason?: string
+  ) =>
+    `Hi ${firstName}, your blood request has been cancelled` +
+    `${reason ? `. Reason: ${reason}` : "."} Please contact us if you have questions. - Agapay`,
 };
