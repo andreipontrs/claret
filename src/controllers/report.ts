@@ -182,7 +182,7 @@ async function fetchInventory(
 /* ─────────────────────────────────────────────────────────────
    EXPORT HELPERS
 ───────────────────────────────────────────────────────────── */
-function addSignatureBlock(doc: PDFKit.PDFDocument) {
+function addSignatureBlock(doc: InstanceType<typeof PDFDocument>) {
   const blockHeight = 90;
   const marginLeft = 40;
   const lineWidth = 220;
