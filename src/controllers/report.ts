@@ -182,6 +182,34 @@ async function fetchInventory(
 /* ─────────────────────────────────────────────────────────────
    EXPORT HELPERS
 ───────────────────────────────────────────────────────────── */
+function addSignatureBlock(doc: PDFKit.PDFDocument) {
+  const blockHeight = 90;
+  const marginLeft = 40;
+  const lineWidth = 220;
+
+  if (doc.y + blockHeight > doc.page.height - 40) {
+    doc.addPage();
+  }
+
+  const y = doc.page.height - 40 - blockHeight;
+
+  doc.fontSize(9).font("Helvetica").text("Prepared by:", marginLeft, y);
+
+  const lineY = y + 40;
+  doc
+    .moveTo(marginLeft, lineY)
+    .lineTo(marginLeft + lineWidth, lineY)
+    .stroke();
+
+  doc
+    .fontSize(8)
+    .font("Helvetica")
+    .text("Signature over Printed Name", marginLeft, lineY + 4, {
+      width: lineWidth,
+      align: "center",
+    });
+}
+
 
 function sendCSV(res: Response, data: object[], filename: string) {
   if (data.length === 0) {
@@ -204,7 +232,8 @@ function sendPDF(
   filename: string,
   title: string,
   startDate: string,
-  endDate: string
+  endDate: string,
+  bloodBankName?: string
 ) {
   const doc = new PDFDocument({ margin: 40, size: "A4", layout: "landscape" });
 
@@ -213,11 +242,17 @@ function sendPDF(
   doc.pipe(res);
 
   doc.fontSize(16).font("Helvetica-Bold").text(title, { align: "center" });
+  
+  if (bloodBankName) {
+    doc.fontSize(12).font("Helvetica-Bold").text(bloodBankName, { align: "center" });
+  }
+
   doc.fontSize(10).font("Helvetica").text(`Date Range: ${startDate} to ${endDate}`, { align: "center" });
   doc.fontSize(9).text(`Generated: ${new Date().toLocaleString()}`, { align: "center" }).moveDown(1);
 
   if (data.length === 0) {
     doc.fontSize(11).text("No records found for the selected filters.", { align: "center" });
+    addSignatureBlock(doc);
     doc.end();
     return;
   }
@@ -264,6 +299,7 @@ function sendPDF(
     y += rowHeight;
   });
 
+  addSignatureBlock(doc);
   doc.end();
 }
 
@@ -323,7 +359,7 @@ export async function generateBloodBankReport(req: Request, res: Response) {
     const filename = `${reportType}_${startDate}_${endDate}`;
 
     if (exportFormat === "csv") return sendCSV(res, data, filename);
-    if (exportFormat === "pdf") return sendPDF(res, data, filename, reportTitle, startDate, endDate);
+    if (exportFormat === "pdf") return sendPDF(res, data, filename, reportTitle, startDate, endDate, bloodBank.hospitalName);
 
     return res.status(200).json({
       reportType,
@@ -360,6 +396,14 @@ export async function generateAdminReport(req: Request, res: Response) {
 
     const bloodBankId = (req.query.bloodBankId as string) ?? "all";
 
+    let selectedBloodBank: BloodBank | null = null;
+    if (bloodBankId !== "all") {
+      selectedBloodBank = await BloodBank.findByPk(bloodBankId);
+      if (!selectedBloodBank) {
+        return res.status(404).json({ message: "Blood bank not found." });
+      }
+    }
+
     let data: object[] = [];
     let reportTitle = "";
     let scopeLabel = "";
@@ -370,7 +414,7 @@ export async function generateAdminReport(req: Request, res: Response) {
         bloodBankId === "all" ? undefined : bloodBankId
       );
       reportTitle = "Blood Donation Appointments Report";
-      scopeLabel  = bloodBankId === "all" ? "All Blood Banks" : `Blood Bank: ${bloodBankId}`;
+      scopeLabel  = selectedBloodBank ? selectedBloodBank.hospitalName : "All Blood Banks";
 
     } else if (reportType === "transfusions") {
       data = await fetchTransfusions(
@@ -378,32 +422,26 @@ export async function generateAdminReport(req: Request, res: Response) {
         bloodBankId === "all" ? undefined : bloodBankId
       );
       reportTitle = "Blood Transfusion Requests Report";
-      scopeLabel  = bloodBankId === "all" ? "All Blood Banks" : `Blood Bank: ${bloodBankId}`;
+      scopeLabel  = selectedBloodBank ? selectedBloodBank.hospitalName : "All Blood Banks";
 
     } else {
-      // inventory — if a specific bloodBankId is passed, resolve its facilityNo
-      let facilityNo: string | undefined = undefined;
+      // inventory uses facilityNo, resolved from the same selectedBloodBank lookup
+      const facilityNo = selectedBloodBank?.facilityNo ?? undefined;
 
-      if (bloodBankId !== "all") {
-        const bloodBank = await BloodBank.findByPk(bloodBankId);
-        if (!bloodBank) {
-          return res.status(404).json({ message: "Blood bank not found." });
-        }
-        facilityNo = bloodBank.facilityNo ?? undefined;
-        scopeLabel = `Facility: ${facilityNo ?? bloodBankId}`;
-      } else {
-        scopeLabel = "All Facilities";
+      if (bloodBankId !== "all" && !facilityNo) {
+        return res.status(400).json({ message: "This blood bank has no facility number assigned." });
       }
 
       data = await fetchInventory(startDate, endDate, facilityNo);
       reportTitle = "Blood Inventory Report";
+      scopeLabel  = selectedBloodBank ? selectedBloodBank.hospitalName : "All Facilities";
     }
 
     const filename = `admin_${reportType}_${startDate}_${endDate}`;
 
     if (exportFormat === "csv") return sendCSV(res, data, filename);
     if (exportFormat === "pdf")
-      return sendPDF(res, data, filename, `${reportTitle} — ${scopeLabel}`, startDate, endDate);
+      return sendPDF(res, data, filename, reportTitle, startDate, endDate, scopeLabel);
 
     return res.status(200).json({
       reportType,
